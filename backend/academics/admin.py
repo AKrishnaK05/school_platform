@@ -14,4 +14,3 @@ admin.site.register(TeacherAssignment)
 admin.site.register(Exam)
 admin.site.register(Marks)
 admin.site.register(ParentStudentLink)
-
