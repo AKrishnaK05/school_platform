@@ -9,7 +9,12 @@ def parent_students(request, parent_id):
     links = ParentStudentLink.objects.filter(parent_id=parent_id)
     students = [link.student for link in links]
 
-    data = [{"id": s.id, "name": s.full_name} for s in students]
+    data = [{
+        "id": s.id,
+        "name": s.full_name,
+        "class_id": s.class_section.id,
+        "class_name": str(s.class_section),
+    } for s in students]
     return Response(data)
 
 
