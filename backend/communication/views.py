@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Announcement, ConversationThread, Message
-from .serializers import AnnouncementSerializer, ThreadSerializer, MessageSerializer
+from .serializers import AnnouncementSerializer, ThreadSerializer
 
 
 @api_view(["GET"])
