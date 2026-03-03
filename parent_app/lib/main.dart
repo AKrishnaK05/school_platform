@@ -1534,23 +1534,54 @@ class MessagesScreen extends StatefulWidget {
 }
 
 class _MessagesScreenState extends State<MessagesScreen> {
-  List threads = [];
+  List chats = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchThreads();
+    fetchChats();
   }
 
-  Future<void> fetchThreads() async {
-    final response = await http.get(
-      Uri.parse("$apiBaseUrl/api/threads/${widget.parentId}/"),
-    );
+  Future<void> fetchChats() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiBaseUrl/api/chats/${widget.parentId}/"),
+      );
 
-    if (response.statusCode == 200) {
+      if (!mounted) {
+        return;
+      }
+
+      if (response.statusCode == 200) {
+        setState(() {
+          chats = json.decode(response.body);
+          isLoading = false;
+        });
+        return;
+      }
+
       setState(() {
-        threads = json.decode(response.body);
+        chats = [];
+        isLoading = false;
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unable to load chats")),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        chats = [];
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cannot connect to server")),
+      );
     }
   }
 
@@ -1567,10 +1598,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
               subtitle: widget.studentName,
             ),
             Expanded(
-              child: threads.isEmpty
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : chats.isEmpty
                   ? const Center(
                       child: Text(
-                        "No messages available",
+                        "No conversations available",
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.black54,
@@ -1580,12 +1613,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      itemCount: threads.length + 1,
+                      itemCount: chats.length + 1,
                       itemBuilder: (context, index) {
-                        if (index == threads.length) {
+                        if (index == chats.length) {
                           return const PoweredByQuadeltFooter();
                         }
-                        final messages = threads[index]['messages'] as List<dynamic>;
+                        final chat = chats[index];
+                        final studentName = chat['student_name'] ?? '';
+                        final teacherName = chat['teacher_name'] ?? '';
+                        final lastMessage = chat['last_message'] ?? '';
+                        final threadId = chat['thread_id'];
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 14),
@@ -1593,39 +1630,336 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Column(
-                            children: messages.map<Widget>((msg) {
-                              return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                leading: Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withAlpha(26),
-                                    borderRadius: BorderRadius.circular(10),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            leading: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withAlpha(26),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.support_agent,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            title: Text(
+                              teacherName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              lastMessage.isEmpty
+                                  ? "Tap to start conversation"
+                                  : "$studentName • $lastMessage",
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.black45,
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChatDetailScreen(
+                                    threadId: threadId,
+                                    parentId: widget.parentId,
+                                    studentName: studentName,
+                                    teacherName: teacherName,
                                   ),
-                                  child: const Icon(
-                                    Icons.person,
-                                    color: AppColors.primary,
-                                    size: 20,
-                                  ),
                                 ),
-                                title: Text(
-                                  msg['sender'],
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                subtitle: Text(msg['content']),
                               );
-                            }).toList(),
+                            },
                           ),
                         );
                       },
                     ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ChatDetailScreen extends StatefulWidget {
+  final int threadId;
+  final int parentId;
+  final String studentName;
+  final String teacherName;
+
+  const ChatDetailScreen({
+    super.key,
+    required this.threadId,
+    required this.parentId,
+    required this.studentName,
+    required this.teacherName,
+  });
+
+  @override
+  State<ChatDetailScreen> createState() => _ChatDetailScreenState();
+}
+
+class _ChatDetailScreenState extends State<ChatDetailScreen> {
+  final TextEditingController messageController = TextEditingController();
+  List messages = [];
+  bool isLoading = true;
+  bool isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchMessages();
+  }
+
+  @override
+  void dispose() {
+    messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> fetchMessages() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiBaseUrl/api/chats/thread/${widget.threadId}/messages/"),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (response.statusCode == 200) {
+        setState(() {
+          messages = json.decode(response.body);
+          isLoading = false;
+        });
+        return;
+      }
+
+      setState(() {
+        messages = [];
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unable to load messages")),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        messages = [];
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cannot connect to server")),
+      );
+    }
+  }
+
+  Future<void> sendMessage() async {
+    if (isSending) {
+      return;
+    }
+
+    final content = messageController.text.trim();
+    if (content.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      isSending = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse("$apiBaseUrl/api/chats/thread/${widget.threadId}/send/"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "parent_id": widget.parentId,
+          "content": content,
+        }),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        setState(() {
+          messages = [...messages, data];
+        });
+        messageController.clear();
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unable to send message")),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cannot connect to server")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSending = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF3F4F6),
+      body: SafeArea(
+        child: Column(
+          children: [
+            AppSectionHeader(
+              icon: Icons.chat,
+              title: widget.teacherName,
+              subtitle: widget.studentName,
+            ),
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : messages.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "No messages yet",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black54,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          itemCount: messages.length,
+                          itemBuilder: (context, index) {
+                            final message = messages[index];
+                            final isParent = message['sender_role'] == 'PARENT';
+                            return Align(
+                              alignment: isParent
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                constraints: const BoxConstraints(maxWidth: 280),
+                                decoration: BoxDecoration(
+                                  color: isParent
+                                      ? AppColors.primary
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      message['sender_name'] ?? '',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isParent
+                                            ? Colors.white70
+                                            : Colors.black54,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      message['content'] ?? '',
+                                      style: TextStyle(
+                                        color: isParent
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              color: const Color(0xFFF3F4F6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: messageController,
+                      enabled: !isSending,
+                      decoration: InputDecoration(
+                        hintText: "Type a message",
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 46,
+                    height: 46,
+                    child: ElevatedButton(
+                      onPressed: isSending ? null : sendMessage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: isSending
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.send),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
