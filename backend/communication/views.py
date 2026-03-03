@@ -42,15 +42,34 @@ def send_message(request):
 
 @api_view(["GET"])
 def parent_chat_threads(request, parent_id):
+    student_filter = request.query_params.get("student_id")
+
     student_ids = list(
         ParentStudentLink.objects.filter(parent_id=parent_id)
         .values_list("student_id", flat=True)
     )
 
+    if student_filter is not None:
+        try:
+            selected_student_id = int(student_filter)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "student_id must be an integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if selected_student_id not in student_ids:
+            return Response([], status=status.HTTP_200_OK)
+
+        student_ids = [selected_student_id]
+
     teacher_assignments = (
         TeacherAssignment.objects
         .filter(class_section_id__in=(
-            ParentStudentLink.objects.filter(parent_id=parent_id)
+            ParentStudentLink.objects.filter(
+                parent_id=parent_id,
+                student_id__in=student_ids,
+            )
             .values_list("student__class_section_id", flat=True)
         ))
         .select_related("teacher")
@@ -59,7 +78,7 @@ def parent_chat_threads(request, parent_id):
     student_class_map = {
         link.student_id: link.student.class_section_id
         for link in ParentStudentLink.objects
-        .filter(parent_id=parent_id)
+        .filter(parent_id=parent_id, student_id__in=student_ids)
         .select_related("student")
     }
 
@@ -81,7 +100,7 @@ def parent_chat_threads(request, parent_id):
 
     threads = (
         ConversationThread.objects
-        .filter(parent_id=parent_id)
+        .filter(parent_id=parent_id, student_id__in=student_ids)
         .select_related("student", "teacher")
         .prefetch_related("messages__sender")
         .order_by("-created_at")

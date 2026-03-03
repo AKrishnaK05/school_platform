@@ -3,6 +3,7 @@ from .models import StudyMaterial, TimetableEntry
 
 
 class TimetableSerializer(serializers.ModelSerializer):
+    day_of_week = serializers.CharField(source="get_day_of_week_display", read_only=True)
     subject = serializers.StringRelatedField()
     teacher = serializers.StringRelatedField()
     class_section = serializers.StringRelatedField()

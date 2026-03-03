@@ -436,8 +436,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    const PoweredByQuadeltFooter(),
                   ],
                 ),
               ),
@@ -458,7 +456,7 @@ class StudentListScreen extends StatefulWidget {
   State<StudentListScreen> createState() => _StudentListScreenState();
 }
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   final int studentId;
   final int parentId;
   final int classId;
@@ -471,6 +469,102 @@ class DashboardScreen extends StatelessWidget {
     required this.classId,
     required this.studentName,
   });
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  bool hasMultipleChildren = false;
+  String attendancePercent = "-";
+  String marksAverage = "-";
+
+  @override
+  void initState() {
+    super.initState();
+    checkMultipleChildren();
+    fetchDashboardStats();
+  }
+
+  Future<void> checkMultipleChildren() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiBaseUrl/api/parent/${widget.parentId}/students/"),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        if (decoded is List) {
+          setState(() {
+            hasMultipleChildren = decoded.length > 1;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> fetchDashboardStats() async {
+    try {
+      final attendanceResponse = await http.get(
+        Uri.parse("$apiBaseUrl/api/student/${widget.studentId}/attendance/"),
+      );
+
+      final marksResponse = await http.get(
+        Uri.parse("$apiBaseUrl/api/student/${widget.studentId}/marks/"),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      double? computedAttendance;
+      double? computedMarksAvg;
+
+      if (attendanceResponse.statusCode == 200) {
+        final attendanceData = json.decode(attendanceResponse.body);
+        if (attendanceData is List && attendanceData.isNotEmpty) {
+          final presentCount = attendanceData.where((entry) {
+            final status = entry is Map ? entry['status']?.toString() : null;
+            return status == 'PRESENT';
+          }).length;
+          computedAttendance = (presentCount / attendanceData.length) * 100;
+        }
+      }
+
+      if (marksResponse.statusCode == 200) {
+        final marksData = json.decode(marksResponse.body);
+        if (marksData is List && marksData.isNotEmpty) {
+          double totalScore = 0;
+          int count = 0;
+          for (final entry in marksData) {
+            if (entry is Map) {
+              final parsed = double.tryParse(entry['score'].toString());
+              if (parsed != null) {
+                totalScore += parsed;
+                count += 1;
+              }
+            }
+          }
+          if (count > 0) {
+            computedMarksAvg = totalScore / count;
+          }
+        }
+      }
+
+      setState(() {
+        attendancePercent = computedAttendance == null
+            ? "-"
+            : "${computedAttendance.toStringAsFixed(0)}%";
+        marksAverage = computedMarksAvg == null
+            ? "-"
+          : computedMarksAvg.toStringAsFixed(1);
+      });
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -526,24 +620,90 @@ class DashboardScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (_) => MessagesScreen(
-                          parentId: parentId,
-                          studentName: studentName,
+                          parentId: widget.parentId,
+                          studentId: widget.studentId,
+                          studentName: widget.studentName,
                         ),
                       ),
                     );
                   },
                   icon: const Icon(Icons.message, color: Colors.white),
                 ),
-                IconButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const NotificationScreen(),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (hasMultipleChildren)
+                      IconButton(
+                        tooltip: "Switch Child",
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StudentListScreen(
+                                parentId: widget.parentId,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.switch_account, color: Colors.white),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.notifications, color: Colors.white),
+                    IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const NotificationScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.notifications, color: Colors.white),
+                    ),
+                    IconButton(
+                      tooltip: "Logout",
+                      onPressed: () async {
+                        final shouldLogout = await showDialog<bool>(
+                          context: context,
+                          builder: (dialogContext) {
+                            return AlertDialog(
+                              title: const Text("Logout"),
+                              content: const Text(
+                                "Are you sure you want to logout?",
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(dialogContext, false);
+                                  },
+                                  child: const Text("Cancel"),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(dialogContext, true);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text("Logout"),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+
+                        if (shouldLogout == true && context.mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.logout, color: Colors.white),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -561,7 +721,7 @@ class DashboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 15),
           Text(
-            studentName,
+            widget.studentName,
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -579,42 +739,81 @@ class DashboardScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          buildMiniCard("Attendance", "76%", AppColors.success),
-          buildMiniCard("Marks Avg", "82%", AppColors.primary),
+          buildMiniCard(
+            "Attendance",
+            attendancePercent,
+            AppColors.success,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AttendanceScreen(
+                    studentId: widget.studentId,
+                    studentName: widget.studentName,
+                  ),
+                ),
+              );
+            },
+          ),
+          buildMiniCard(
+            "Marks Avg",
+            marksAverage,
+            AppColors.primary,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MarksScreen(
+                    studentId: widget.studentId,
+                    studentName: widget.studentName,
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget buildMiniCard(String title, String value, Color color) {
+  Widget buildMiniCard(
+    String title,
+    String value,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 5),
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            )
-          ],
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 5),
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              )
+            ],
+          ),
+          child: Column(
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
-            ),
-            const SizedBox(height: 5),
-            Text(title),
-          ],
+              const SizedBox(height: 5),
+              Text(title),
+            ],
+          ),
         ),
       ),
     );
@@ -640,31 +839,37 @@ class DashboardScreen extends StatelessWidget {
             context,
             Icons.description,
             "Report Card",
-            ReportCardScreen(studentId: studentId, studentName: studentName),
+            ReportCardScreen(
+              studentId: widget.studentId,
+              studentName: widget.studentName,
+            ),
           ),
           buildCard(
             context,
             Icons.calendar_today,
             "Timetable",
-            TimetableScreen(classId: classId, studentName: studentName),
+            TimetableScreen(classId: widget.classId, studentName: widget.studentName),
           ),
           buildCard(
             context,
             Icons.check_circle,
             "Attendance",
-            AttendanceScreen(studentId: studentId, studentName: studentName),
+            AttendanceScreen(
+              studentId: widget.studentId,
+              studentName: widget.studentName,
+            ),
           ),
           buildCard(
             context,
             Icons.book,
             "Materials",
-            MaterialsScreen(studentName: studentName),
+            MaterialsScreen(studentName: widget.studentName),
           ),
           buildCard(
             context,
             Icons.bar_chart,
             "Marks",
-            MarksScreen(studentId: studentId, studentName: studentName),
+            MarksScreen(studentId: widget.studentId, studentName: widget.studentName),
           ),
         ],
       ),
@@ -837,11 +1042,8 @@ class _ReportCardScreenState extends State<ReportCardScreen> {
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(20),
-                          itemCount: reportCards.length + 1,
+                          itemCount: reportCards.length,
                           itemBuilder: (context, index) {
-                            if (index == reportCards.length) {
-                              return const PoweredByQuadeltFooter();
-                            }
                             final report = reportCards[index];
                             return Card(
                               margin: const EdgeInsets.only(bottom: 14),
@@ -987,6 +1189,26 @@ class TimetableScreen extends StatefulWidget {
 
 class _TimetableScreenState extends State<TimetableScreen> {
   List timetable = [];
+  bool isLoading = true;
+  bool isUsingSampleData = false;
+
+  final List<String> weekDays = const [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  final List<Map<String, String>> periods = const [
+    {"number": "1", "time": "08:30-09:15"},
+    {"number": "2", "time": "09:15-10:00"},
+    {"number": "3", "time": "10:15-11:00"},
+    {"number": "4", "time": "11:00-11:45"},
+    {"number": "5", "time": "12:15-01:00"},
+    {"number": "6", "time": "01:00-01:45"},
+  ];
 
   @override
   void initState() {
@@ -995,15 +1217,281 @@ class _TimetableScreenState extends State<TimetableScreen> {
   }
 
   Future<void> fetchTimetable() async {
-    final response = await http.get(
-      Uri.parse("$apiBaseUrl/api/timetable/${widget.classId}/"),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse("$apiBaseUrl/api/timetable/${widget.classId}/"),
+      );
 
-    if (response.statusCode == 200) {
+      if (!mounted) {
+        return;
+      }
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        if (decoded is List && decoded.isNotEmpty) {
+          setState(() {
+            timetable = decoded;
+            isLoading = false;
+            isUsingSampleData = false;
+          });
+          return;
+        }
+      }
+
       setState(() {
-        timetable = json.decode(response.body);
+        timetable = sampleTimetable();
+        isLoading = false;
+        isUsingSampleData = true;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        timetable = sampleTimetable();
+        isLoading = false;
+        isUsingSampleData = true;
       });
     }
+  }
+
+  List<Map<String, dynamic>> sampleTimetable() {
+    return [
+      {
+        "day_of_week": "Monday",
+        "period_number": 1,
+        "subject": "English",
+        "teacher": "Ms. Priya",
+      },
+      {
+        "day_of_week": "Monday",
+        "period_number": 2,
+        "subject": "Mathematics",
+        "teacher": "Mr. Arjun",
+      },
+      {
+        "day_of_week": "Monday",
+        "period_number": 3,
+        "subject": "Science",
+        "teacher": "Ms. Kavya",
+      },
+      {
+        "day_of_week": "Monday",
+        "period_number": 4,
+        "subject": "Social",
+        "teacher": "Mr. Suresh",
+      },
+      {
+        "day_of_week": "Monday",
+        "period_number": 5,
+        "subject": "Hindi",
+        "teacher": "Ms. Meera",
+      },
+      {
+        "day_of_week": "Monday",
+        "period_number": 6,
+        "subject": "Computer",
+        "teacher": "Mr. Kiran",
+      },
+      {
+        "day_of_week": "Tuesday",
+        "period_number": 1,
+        "subject": "Mathematics",
+        "teacher": "Mr. Arjun",
+      },
+      {
+        "day_of_week": "Tuesday",
+        "period_number": 2,
+        "subject": "English",
+        "teacher": "Ms. Priya",
+      },
+      {
+        "day_of_week": "Tuesday",
+        "period_number": 3,
+        "subject": "Computer",
+        "teacher": "Mr. Kiran",
+      },
+      {
+        "day_of_week": "Tuesday",
+        "period_number": 4,
+        "subject": "Science",
+        "teacher": "Ms. Kavya",
+      },
+      {
+        "day_of_week": "Tuesday",
+        "period_number": 5,
+        "subject": "Art",
+        "teacher": "Ms. Ritu",
+      },
+      {
+        "day_of_week": "Tuesday",
+        "period_number": 6,
+        "subject": "Sports",
+        "teacher": "Coach Aman",
+      },
+      {
+        "day_of_week": "Wednesday",
+        "period_number": 1,
+        "subject": "Science",
+        "teacher": "Ms. Kavya",
+      },
+      {
+        "day_of_week": "Wednesday",
+        "period_number": 2,
+        "subject": "Mathematics",
+        "teacher": "Mr. Arjun",
+      },
+      {
+        "day_of_week": "Wednesday",
+        "period_number": 3,
+        "subject": "English",
+        "teacher": "Ms. Priya",
+      },
+      {
+        "day_of_week": "Wednesday",
+        "period_number": 4,
+        "subject": "Social",
+        "teacher": "Mr. Suresh",
+      },
+      {
+        "day_of_week": "Wednesday",
+        "period_number": 5,
+        "subject": "Hindi",
+        "teacher": "Ms. Meera",
+      },
+      {
+        "day_of_week": "Wednesday",
+        "period_number": 6,
+        "subject": "Library",
+        "teacher": "Ms. Pooja",
+      },
+      {
+        "day_of_week": "Thursday",
+        "period_number": 1,
+        "subject": "English",
+        "teacher": "Ms. Priya",
+      },
+      {
+        "day_of_week": "Thursday",
+        "period_number": 2,
+        "subject": "Science",
+        "teacher": "Ms. Kavya",
+      },
+      {
+        "day_of_week": "Thursday",
+        "period_number": 3,
+        "subject": "Mathematics",
+        "teacher": "Mr. Arjun",
+      },
+      {
+        "day_of_week": "Thursday",
+        "period_number": 4,
+        "subject": "Computer",
+        "teacher": "Mr. Kiran",
+      },
+      {
+        "day_of_week": "Thursday",
+        "period_number": 5,
+        "subject": "Social",
+        "teacher": "Mr. Suresh",
+      },
+      {
+        "day_of_week": "Thursday",
+        "period_number": 6,
+        "subject": "GK",
+        "teacher": "Ms. Nisha",
+      },
+      {
+        "day_of_week": "Friday",
+        "period_number": 1,
+        "subject": "Mathematics",
+        "teacher": "Mr. Arjun",
+      },
+      {
+        "day_of_week": "Friday",
+        "period_number": 2,
+        "subject": "English",
+        "teacher": "Ms. Priya",
+      },
+      {
+        "day_of_week": "Friday",
+        "period_number": 3,
+        "subject": "Science",
+        "teacher": "Ms. Kavya",
+      },
+      {
+        "day_of_week": "Friday",
+        "period_number": 4,
+        "subject": "Hindi",
+        "teacher": "Ms. Meera",
+      },
+      {
+        "day_of_week": "Friday",
+        "period_number": 5,
+        "subject": "Sports",
+        "teacher": "Coach Aman",
+      },
+      {
+        "day_of_week": "Friday",
+        "period_number": 6,
+        "subject": "Art",
+        "teacher": "Ms. Ritu",
+      },
+      {
+        "day_of_week": "Saturday",
+        "period_number": 1,
+        "subject": "English",
+        "teacher": "Ms. Priya",
+      },
+      {
+        "day_of_week": "Saturday",
+        "period_number": 2,
+        "subject": "Mathematics",
+        "teacher": "Mr. Arjun",
+      },
+      {
+        "day_of_week": "Saturday",
+        "period_number": 3,
+        "subject": "Science",
+        "teacher": "Ms. Kavya",
+      },
+      {
+        "day_of_week": "Saturday",
+        "period_number": 4,
+        "subject": "Club Activity",
+        "teacher": "Class Teacher",
+      },
+    ];
+  }
+
+  String slotText(String day, int period) {
+    const dayCodeToName = {
+      "MON": "Monday",
+      "TUE": "Tuesday",
+      "WED": "Wednesday",
+      "THU": "Thursday",
+      "FRI": "Friday",
+      "SAT": "Saturday",
+    };
+
+    final match = timetable.cast<dynamic>().cast<Map>().firstWhere(
+      (entry) {
+        final rawDay = entry['day_of_week']?.toString() ?? '';
+        final normalizedDay = dayCodeToName[rawDay.toUpperCase()] ?? rawDay;
+        return normalizedDay.toLowerCase() == day.toLowerCase() &&
+            int.tryParse(entry['period_number'].toString()) == period;
+      },
+      orElse: () => {},
+    );
+
+    if (match.isEmpty) {
+      return "-";
+    }
+
+    final subject = match['subject']?.toString() ?? "-";
+    final teacher = match['teacher']?.toString() ?? "";
+    return teacher.isEmpty ? subject : "$subject\n$teacher";
   }
 
   @override
@@ -1019,58 +1507,117 @@ class _TimetableScreenState extends State<TimetableScreen> {
               subtitle: widget.studentName,
             ),
             Expanded(
-              child: timetable.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "No timetable available",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: timetable.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == timetable.length) {
-                          return const PoweredByQuadeltFooter();
-                        }
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 14),
-                          color: AppColors.card,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            leading: Container(
-                              width: 42,
-                              height: 42,
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (isUsingSampleData)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withAlpha(26),
-                                borderRadius: BorderRadius.circular(12),
+                                color: AppColors.badge.withAlpha(35),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(
-                                Icons.schedule,
-                                color: AppColors.primary,
+                              child: const Text(
+                                "Showing sample timetable data",
+                                style: TextStyle(
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                            title: Text(
-                              "${timetable[index]['day_of_week']} - Period ${timetable[index]['period_number']}",
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600),
+                          Card(
+                            color: AppColors.card,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            subtitle: Text(
-                              "${timetable[index]['subject']} (${timetable[index]['teacher']})",
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Table(
+                                  defaultColumnWidth:
+                                      const FixedColumnWidth(130),
+                                  border: TableBorder.all(
+                                    color: Colors.black12,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  children: [
+                                    TableRow(
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withAlpha(18),
+                                      ),
+                                      children: [
+                                        const Padding(
+                                          padding: EdgeInsets.all(10),
+                                          child: Text(
+                                            "Day / Period",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                        ...periods.map(
+                                          (period) => Padding(
+                                            padding: const EdgeInsets.all(10),
+                                            child: Text(
+                                              "P${period['number']}\n${period['time']}",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 12,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    ...weekDays.map(
+                                      (day) => TableRow(
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.all(10),
+                                            child: Text(
+                                              day,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          ...periods.map(
+                                            (period) => Padding(
+                                              padding: const EdgeInsets.all(8),
+                                              child: Text(
+                                                slotText(
+                                                  day,
+                                                  int.parse(
+                                                    period['number']!,
+                                                  ),
+                                                ),
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     ),
             ),
           ],
@@ -1143,11 +1690,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      itemCount: attendance.length + 1,
+                      itemCount: attendance.length,
                       itemBuilder: (context, index) {
-                        if (index == attendance.length) {
-                          return const PoweredByQuadeltFooter();
-                        }
                         final isPresent = attendance[index]['status'] ==
                             "PRESENT";
                         return Card(
@@ -1246,11 +1790,8 @@ class _MarksScreenState extends State<MarksScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      itemCount: marks.length + 1,
+                      itemCount: marks.length,
                       itemBuilder: (context, index) {
-                        if (index == marks.length) {
-                          return const PoweredByQuadeltFooter();
-                        }
                         return Card(
                           margin: const EdgeInsets.only(bottom: 14),
                           color: AppColors.card,
@@ -1353,11 +1894,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      itemCount: notifications.length + 1,
+                      itemCount: notifications.length,
                       itemBuilder: (context, index) {
-                        if (index == notifications.length) {
-                          return const PoweredByQuadeltFooter();
-                        }
                         return Card(
                           margin: const EdgeInsets.only(bottom: 14),
                           color: AppColors.card,
@@ -1455,11 +1993,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      itemCount: materials.length + 1,
+                      itemCount: materials.length,
                       itemBuilder: (context, index) {
-                        if (index == materials.length) {
-                          return const PoweredByQuadeltFooter();
-                        }
                         return Card(
                           margin: const EdgeInsets.only(bottom: 14),
                           color: AppColors.card,
@@ -1521,11 +2056,13 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
 
 class MessagesScreen extends StatefulWidget {
   final int parentId;
+  final int studentId;
   final String studentName;
 
   const MessagesScreen({
     super.key,
     required this.parentId,
+    required this.studentId,
     required this.studentName,
   });
 
@@ -1546,7 +2083,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
   Future<void> fetchChats() async {
     try {
       final response = await http.get(
-        Uri.parse("$apiBaseUrl/api/chats/${widget.parentId}/"),
+        Uri.parse(
+          "$apiBaseUrl/api/chats/${widget.parentId}/?student_id=${widget.studentId}",
+        ),
       );
 
       if (!mounted) {
@@ -1613,11 +2152,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      itemCount: chats.length + 1,
+                      itemCount: chats.length,
                       itemBuilder: (context, index) {
-                        if (index == chats.length) {
-                          return const PoweredByQuadeltFooter();
-                        }
                         final chat = chats[index];
                         final studentName = chat['student_name'] ?? '';
                         final teacherName = chat['teacher_name'] ?? '';
@@ -2068,11 +2604,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(20),
-                          itemCount: students.length + 1,
+                          itemCount: students.length,
                           itemBuilder: (context, index) {
-                            if (index == students.length) {
-                              return const PoweredByQuadeltFooter();
-                            }
                             final student = students[index];
                             return Card(
                               margin: const EdgeInsets.only(bottom: 14),
