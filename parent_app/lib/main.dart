@@ -105,8 +105,8 @@ class AppSectionHeader extends StatelessWidget {
               ? ClipOval(
                   child: Image.network(
                     "$apiBaseUrl$imageUrl",
-                    width: 40,
-                    height: 40,
+                    width: 48,
+                    height: 48,
                     fit: BoxFit.cover,
                     errorBuilder: (_, error, stackTrace) {
                       return Icon(icon, color: Colors.white, size: 30);
@@ -749,8 +749,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 8),
           Container(
-            width: 72,
-            height: 72,
+            width: 84,
+            height: 84,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
@@ -761,8 +761,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ? ClipOval(
                     child: Image.network(
                       "$apiBaseUrl${widget.studentImage}",
-                      width: 72,
-                      height: 72,
+                      width: 84,
+                      height: 84,
                       fit: BoxFit.cover,
                       errorBuilder: (_, error, stackTrace) {
                         return const Icon(
@@ -1117,8 +1117,8 @@ class _ReportCardScreenState extends State<ReportCardScreen> {
                                   vertical: 10,
                                 ),
                                 leading: Container(
-                                  width: 42,
-                                  height: 42,
+                                  width: 52,
+                                  height: 52,
                                   decoration: BoxDecoration(
                                     color: AppColors.primary.withAlpha(26),
                                     borderRadius: BorderRadius.circular(12),
@@ -2724,8 +2724,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                               BorderRadius.circular(12),
                                           child: Image.network(
                                             "$apiBaseUrl${student['image']}",
-                                            width: 42,
-                                            height: 42,
+                                            width: 52,
+                                            height: 52,
                                             fit: BoxFit.cover,
                                             errorBuilder: (
                                               _,
