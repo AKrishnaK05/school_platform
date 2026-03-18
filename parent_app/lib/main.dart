@@ -58,6 +58,7 @@ class AppSectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
+  final String? imageUrl;
   final bool showBack;
 
   const AppSectionHeader({
@@ -65,6 +66,7 @@ class AppSectionHeader extends StatelessWidget {
     required this.icon,
     required this.title,
     this.subtitle,
+    this.imageUrl,
     this.showBack = true,
   });
 
@@ -72,7 +74,7 @@ class AppSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 28, bottom: 36),
+      padding: const EdgeInsets.only(top: 10, bottom: 14),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -83,8 +85,8 @@ class AppSectionHeader extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(36),
-          bottomRight: Radius.circular(36),
+          bottomLeft: Radius.circular(22),
+          bottomRight: Radius.circular(22),
         ),
       ),
       child: Column(
@@ -99,21 +101,33 @@ class AppSectionHeader extends StatelessWidget {
                 const Spacer(),
               ],
             ),
-          Icon(icon, color: Colors.white, size: 44),
-          const SizedBox(height: 10),
+          (imageUrl != null && imageUrl!.isNotEmpty)
+              ? ClipOval(
+                  child: Image.network(
+                    "$apiBaseUrl$imageUrl",
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, error, stackTrace) {
+                      return Icon(icon, color: Colors.white, size: 30);
+                    },
+                  ),
+                )
+              : Icon(icon, color: Colors.white, size: 30),
+          const SizedBox(height: 6),
           Text(
             title,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 24,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
             ),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
               subtitle!,
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
             ),
           ],
         ],
@@ -281,6 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final parentId = data["parent_id"];
+        final userId = data["user_id"];
 
         if (!mounted) {
           return;
@@ -293,11 +308,19 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
+        if (userId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("User profile not found")),
+          );
+          return;
+        }
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => StudentListScreen(
               parentId: parentId,
+              userId: userId,
             ),
           ),
         );
@@ -305,10 +328,14 @@ class _LoginScreenState extends State<LoginScreen> {
         String message = "Login failed";
         try {
           final errorData = json.decode(response.body);
-          if (errorData is Map && errorData["non_field_errors"] is List) {
-            final errors = errorData["non_field_errors"] as List;
-            if (errors.isNotEmpty) {
-              message = errors.first.toString();
+          if (errorData is Map) {
+            if (errorData["non_field_errors"] is List) {
+              final errors = errorData["non_field_errors"] as List;
+              if (errors.isNotEmpty) {
+                message = errors.first.toString();
+              }
+            } else if (errorData["detail"] != null) {
+              message = errorData["detail"].toString();
             }
           }
         } catch (_) {}
@@ -449,25 +476,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
 class StudentListScreen extends StatefulWidget {
   final int parentId;
+  final int userId;
 
-  const StudentListScreen({super.key, required this.parentId});
+  const StudentListScreen({
+    super.key,
+    required this.parentId,
+    required this.userId,
+  });
 
   @override
   State<StudentListScreen> createState() => _StudentListScreenState();
 }
 
 class DashboardScreen extends StatefulWidget {
+  final int userId;
   final int studentId;
   final int parentId;
   final int classId;
   final String studentName;
+  final String? studentImage;
 
   const DashboardScreen({
     super.key,
+    required this.userId,
     required this.studentId,
     required this.parentId,
     required this.classId,
     required this.studentName,
+    this.studentImage,
   });
 
   @override
@@ -592,7 +628,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 20, bottom: 40),
+      padding: const EdgeInsets.only(top: 8, bottom: 16),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -603,8 +639,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(40),
-          bottomRight: Radius.circular(40),
+          bottomLeft: Radius.circular(22),
+          bottomRight: Radius.circular(22),
         ),
       ),
       child: Column(
@@ -620,9 +656,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => MessagesScreen(
+                          userId: widget.userId,
                           parentId: widget.parentId,
                           studentId: widget.studentId,
                           studentName: widget.studentName,
+                          studentImage: widget.studentImage,
                         ),
                       ),
                     );
@@ -641,6 +679,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             MaterialPageRoute(
                               builder: (_) => StudentListScreen(
                                 parentId: widget.parentId,
+                                userId: widget.userId,
                               ),
                             ),
                           );
@@ -708,22 +747,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
           Container(
-            width: 110,
-            height: 110,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
-              border: Border.all(color: Colors.white, width: 4),
+              border: Border.all(color: Colors.white, width: 3),
             ),
-            child: const Icon(Icons.person, size: 60, color: AppColors.primary),
+            child: widget.studentImage != null &&
+                    widget.studentImage!.toString().isNotEmpty
+                ? ClipOval(
+                    child: Image.network(
+                      "$apiBaseUrl${widget.studentImage}",
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, error, stackTrace) {
+                        return const Icon(
+                          Icons.person,
+                          size: 38,
+                          color: AppColors.primary,
+                        );
+                      },
+                    ),
+                  )
+                : const Icon(Icons.person, size: 38, color: AppColors.primary),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 6),
           Text(
             widget.studentName,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 17,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -842,6 +898,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ReportCardScreen(
               studentId: widget.studentId,
               studentName: widget.studentName,
+              studentImage: widget.studentImage,
             ),
           ),
           buildCard(
@@ -951,11 +1008,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class ReportCardScreen extends StatefulWidget {
   final int studentId;
   final String studentName;
+  final String? studentImage;
 
   const ReportCardScreen({
     super.key,
     required this.studentId,
     required this.studentName,
+    this.studentImage,
   });
 
   @override
@@ -1025,6 +1084,7 @@ class _ReportCardScreenState extends State<ReportCardScreen> {
               icon: Icons.description,
               title: "Report Card",
               subtitle: widget.studentName,
+              imageUrl: widget.studentImage,
             ),
             Expanded(
               child: isLoading
@@ -2055,15 +2115,19 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
 }
 
 class MessagesScreen extends StatefulWidget {
+  final int userId;
   final int parentId;
   final int studentId;
   final String studentName;
+  final String? studentImage;
 
   const MessagesScreen({
     super.key,
+    required this.userId,
     required this.parentId,
     required this.studentId,
     required this.studentName,
+    this.studentImage,
   });
 
   @override
@@ -2084,7 +2148,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-          "$apiBaseUrl/api/chats/${widget.parentId}/?student_id=${widget.studentId}",
+          "$apiBaseUrl/api/chats/v2/?user_id=${widget.userId}&student_id=${widget.studentId}",
         ),
       );
 
@@ -2135,6 +2199,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               icon: Icons.message,
               title: "Messages",
               subtitle: widget.studentName,
+              imageUrl: widget.studentImage,
             ),
             Expanded(
               child: isLoading
@@ -2155,10 +2220,23 @@ class _MessagesScreenState extends State<MessagesScreen> {
                       itemCount: chats.length,
                       itemBuilder: (context, index) {
                         final chat = chats[index];
-                        final studentName = chat['student_name'] ?? '';
-                        final teacherName = chat['teacher_name'] ?? '';
+                        final roomName = chat['name'] ?? 'Chat';
+                        final isGroup = chat['is_group'] == true;
+                        final className = chat['class_name'] ?? '';
+                        final memberNames = (chat['member_names'] as List?)
+                            ?.map((e) => e.toString())
+                            .toList() ??
+                          <String>[];
                         final lastMessage = chat['last_message'] ?? '';
-                        final threadId = chat['thread_id'];
+                        final roomId = chat['room_id'];
+
+                        final subtitleText = lastMessage.isEmpty
+                          ? (isGroup
+                            ? (className.isEmpty
+                              ? "No messages yet"
+                              : "$className • Group chat")
+                            : "Tap to start conversation")
+                          : lastMessage;
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 14),
@@ -2175,24 +2253,28 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               width: 42,
                               height: 42,
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withAlpha(26),
+                                color: isGroup
+                                    ? AppColors.badge.withAlpha(45)
+                                    : AppColors.primary.withAlpha(26),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(
-                                Icons.support_agent,
-                                color: AppColors.primary,
+                              child: Icon(
+                                isGroup ? Icons.groups : Icons.support_agent,
+                                color: isGroup
+                                    ? const Color(0xFF92400E)
+                                    : AppColors.primary,
                               ),
                             ),
                             title: Text(
-                              teacherName,
+                              roomName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             subtitle: Text(
-                              lastMessage.isEmpty
-                                  ? "Tap to start conversation"
-                                  : "$studentName • $lastMessage",
+                              isGroup && memberNames.isNotEmpty
+                                  ? "$subtitleText\n${memberNames.take(2).join(', ')}"
+                                  : subtitleText,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -2206,10 +2288,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => ChatDetailScreen(
-                                    threadId: threadId,
-                                    parentId: widget.parentId,
-                                    studentName: studentName,
-                                    teacherName: teacherName,
+                                    roomId: roomId,
+                                    userId: widget.userId,
+                                    roomName: roomName,
+                                    subtitle: isGroup ? className : widget.studentName,
+                                    isGroup: isGroup,
                                   ),
                                 ),
                               );
@@ -2227,17 +2310,19 @@ class _MessagesScreenState extends State<MessagesScreen> {
 }
 
 class ChatDetailScreen extends StatefulWidget {
-  final int threadId;
-  final int parentId;
-  final String studentName;
-  final String teacherName;
+  final int roomId;
+  final int userId;
+  final String roomName;
+  final String subtitle;
+  final bool isGroup;
 
   const ChatDetailScreen({
     super.key,
-    required this.threadId,
-    required this.parentId,
-    required this.studentName,
-    required this.teacherName,
+    required this.roomId,
+    required this.userId,
+    required this.roomName,
+    required this.subtitle,
+    required this.isGroup,
   });
 
   @override
@@ -2265,7 +2350,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Future<void> fetchMessages() async {
     try {
       final response = await http.get(
-        Uri.parse("$apiBaseUrl/api/chats/thread/${widget.threadId}/messages/"),
+        Uri.parse(
+          "$apiBaseUrl/api/chats/v2/rooms/${widget.roomId}/messages/?user_id=${widget.userId}",
+        ),
       );
 
       if (!mounted) {
@@ -2320,10 +2407,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("$apiBaseUrl/api/chats/thread/${widget.threadId}/send/"),
+        Uri.parse("$apiBaseUrl/api/chats/v2/rooms/${widget.roomId}/messages/"),
         headers: {"Content-Type": "application/json"},
         body: json.encode({
-          "parent_id": widget.parentId,
+          "user_id": widget.userId,
           "content": content,
         }),
       );
@@ -2369,9 +2456,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         child: Column(
           children: [
             AppSectionHeader(
-              icon: Icons.chat,
-              title: widget.teacherName,
-              subtitle: widget.studentName,
+              icon: widget.isGroup ? Icons.groups : Icons.chat,
+              title: widget.roomName,
+              subtitle: widget.subtitle,
             ),
             Expanded(
               child: isLoading
@@ -2395,9 +2482,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                           itemCount: messages.length,
                           itemBuilder: (context, index) {
                             final message = messages[index];
-                            final isParent = message['sender_role'] == 'PARENT';
+                            final isCurrentUser =
+                                message['sender_id'] == widget.userId;
                             return Align(
-                              alignment: isParent
+                              alignment: isCurrentUser
                                   ? Alignment.centerRight
                                   : Alignment.centerLeft,
                               child: Container(
@@ -2408,7 +2496,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                 ),
                                 constraints: const BoxConstraints(maxWidth: 280),
                                 decoration: BoxDecoration(
-                                  color: isParent
+                                  color: isCurrentUser
                                       ? AppColors.primary
                                       : Colors.white,
                                   borderRadius: BorderRadius.circular(12),
@@ -2420,7 +2508,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                       message['sender_name'] ?? '',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: isParent
+                                        color: isCurrentUser
                                             ? Colors.white70
                                             : Colors.black54,
                                         fontWeight: FontWeight.w600,
@@ -2430,7 +2518,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                     Text(
                                       message['content'] ?? '',
                                       style: TextStyle(
-                                        color: isParent
+                                        color: isCurrentUser
                                             ? Colors.white
                                             : Colors.black87,
                                       ),
@@ -2534,10 +2622,12 @@ class _StudentListScreenState extends State<StudentListScreen> {
               context,
               MaterialPageRoute(
                 builder: (_) => DashboardScreen(
+                  userId: widget.userId,
                   studentId: student['id'],
                   parentId: widget.parentId,
                   classId: student['class_id'],
                   studentName: student['name'],
+                  studentImage: student['image'],
                 ),
               ),
             );
@@ -2625,10 +2715,34 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                     color: AppColors.primary.withAlpha(26),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(
-                                    Icons.person,
-                                    color: AppColors.primary,
-                                  ),
+                                  child: student['image'] != null &&
+                                          student['image']
+                                              .toString()
+                                              .isNotEmpty
+                                      ? ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          child: Image.network(
+                                            "$apiBaseUrl${student['image']}",
+                                            width: 42,
+                                            height: 42,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (
+                                              _,
+                                              error,
+                                              stackTrace,
+                                            ) {
+                                              return const Icon(
+                                                Icons.person,
+                                                color: AppColors.primary,
+                                              );
+                                            },
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.person,
+                                          color: AppColors.primary,
+                                        ),
                                 ),
                                 title: Text(
                                   student['name'],
@@ -2646,10 +2760,12 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => DashboardScreen(
+                                        userId: widget.userId,
                                         studentId: student['id'],
                                         parentId: widget.parentId,
                                         classId: student['class_id'],
                                         studentName: student['name'],
+                                        studentImage: student['image'],
                                       ),
                                     ),
                                   );

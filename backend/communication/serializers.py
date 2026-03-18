@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import Announcement, ConversationThread, Message
+from .models import (
+    Announcement,
+    ConversationThread,
+    Message,
+    ChatRoom,
+    ChatRoomMessage,
+)
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):
@@ -51,3 +57,23 @@ class ChatMessageSerializer(serializers.Serializer):
     sender_role = serializers.CharField()
     content = serializers.CharField()
     timestamp = serializers.DateTimeField()
+
+
+class ChatRoomSerializer(serializers.Serializer):
+    room_id = serializers.IntegerField()
+    name = serializers.CharField()
+    is_group = serializers.BooleanField()
+    student_id = serializers.IntegerField(allow_null=True)
+    class_name = serializers.CharField(allow_blank=True)
+    member_names = serializers.ListField(child=serializers.CharField())
+    last_message = serializers.CharField(allow_blank=True)
+    last_message_at = serializers.DateTimeField(allow_null=True)
+
+
+class ChatRoomMessageSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    room_id = serializers.IntegerField()
+    sender_id = serializers.IntegerField()
+    sender_name = serializers.CharField()
+    content = serializers.CharField()
+    created_at = serializers.DateTimeField()

@@ -6,6 +6,8 @@ from .views import (
     parent_chat_threads,
     thread_messages,
     send_parent_message,
+    chat_rooms_v2,
+    chat_room_messages_v2,
 )
 
 urlpatterns = [
@@ -15,4 +17,6 @@ urlpatterns = [
     path("chats/<int:parent_id>/", parent_chat_threads),
     path("chats/thread/<int:thread_id>/messages/", thread_messages),
     path("chats/thread/<int:thread_id>/send/", send_parent_message),
+    path("chats/v2/", chat_rooms_v2),
+    path("chats/v2/rooms/<int:room_id>/messages/", chat_room_messages_v2),
 ]

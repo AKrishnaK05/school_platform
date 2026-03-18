@@ -1,9 +1,20 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.hashers import identify_hasher, make_password
+from django.core.exceptions import ValidationError
 
 
 class User(AbstractUser):
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if self.password:
+            try:
+                identify_hasher(self.password)
+            except (ValueError, ValidationError):
+                self.password = make_password(self.password)
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username

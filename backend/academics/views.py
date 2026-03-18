@@ -14,6 +14,7 @@ def parent_students(request, parent_id):
         "name": s.full_name,
         "class_id": s.class_section.id,
         "class_name": str(s.class_section),
+        "image": s.photo.url if s.photo else None,
     } for s in students]
     return Response(data)
 

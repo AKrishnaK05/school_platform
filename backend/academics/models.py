@@ -12,6 +12,7 @@ class Student(models.Model):
     full_name = models.CharField(max_length=200)
     roll_no = models.CharField(max_length=20)
     class_section = models.ForeignKey(ClassSection, on_delete=models.CASCADE)
+    photo = models.ImageField(upload_to="students/", blank=True, null=True)
 
     def __str__(self):
         return self.full_name
