@@ -1148,17 +1148,14 @@ class _ReportCardScreenState extends State<ReportCardScreen> {
                                 ),
                                 onTap: () async {
                                   final filePath = report['pdf_file'];
-                                  if (filePath == null ||
-                                      filePath.toString().isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text("PDF not available"),
-                                      ),
-                                    );
-                                    return;
-                                  }
+                                  final reportId = report['id'];
+                                  final hasStoredPdf = filePath != null &&
+                                      filePath.toString().isNotEmpty;
 
-                                  final url = "$apiBaseUrl$filePath";
+                                  // Fall back to generated PDF endpoint when no file is stored.
+                                  final url = hasStoredPdf
+                                      ? "$apiBaseUrl$filePath"
+                                      : "$apiBaseUrl/api/reportcards/$reportId/pdf/";
                                   final uri = Uri.parse(url);
 
                                   final launched = await launchUrl(
@@ -1251,6 +1248,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
   List timetable = [];
   bool isLoading = true;
   bool isUsingSampleData = false;
+  late String selectedDay;
 
   final List<String> weekDays = const [
     "Monday",
@@ -1273,6 +1271,15 @@ class _TimetableScreenState extends State<TimetableScreen> {
   @override
   void initState() {
     super.initState();
+    // Start with Monday or today's day if it's a weekday
+    DateTime now = DateTime.now();
+    if (now.weekday >= 1 && now.weekday <= 6) {
+      // Monday=1 to Saturday=6
+      selectedDay = weekDays[now.weekday - 1];
+    } else {
+      // If Sunday, default to Monday
+      selectedDay = "Monday";
+    }
     fetchTimetable();
   }
 
@@ -1525,37 +1532,23 @@ class _TimetableScreenState extends State<TimetableScreen> {
     ];
   }
 
-  String slotText(String day, int period) {
-    const dayCodeToName = {
-      "MON": "Monday",
-      "TUE": "Tuesday",
-      "WED": "Wednesday",
-      "THU": "Thursday",
-      "FRI": "Friday",
-      "SAT": "Saturday",
-    };
+  List<Map<String, dynamic>> getTimetableForDay(String day) {
+    return timetable
+        .cast<Map<String, dynamic>>()
+        .where((entry) => entry['day_of_week']?.toString().toLowerCase() == day.toLowerCase())
+        .toList()
+        ..sort((a, b) => int.parse(a['period_number'].toString())
+            .compareTo(int.parse(b['period_number'].toString())));
+  }
 
-    final match = timetable.cast<dynamic>().cast<Map>().firstWhere(
-      (entry) {
-        final rawDay = entry['day_of_week']?.toString() ?? '';
-        final normalizedDay = dayCodeToName[rawDay.toUpperCase()] ?? rawDay;
-        return normalizedDay.toLowerCase() == day.toLowerCase() &&
-            int.tryParse(entry['period_number'].toString()) == period;
-      },
-      orElse: () => {},
-    );
-
-    if (match.isEmpty) {
-      return "-";
-    }
-
-    final subject = match['subject']?.toString() ?? "-";
-    final teacher = match['teacher']?.toString() ?? "";
-    return teacher.isEmpty ? subject : "$subject\n$teacher";
+  String getDayShorthand(String day) {
+    return day.substring(0, 3).toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
+    final dayTimetable = getTimetableForDay(selectedDay);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       body: SafeArea(
@@ -1566,119 +1559,192 @@ class _TimetableScreenState extends State<TimetableScreen> {
               title: "Timetable",
               subtitle: widget.studentName,
             ),
+            // Day Selector Bar
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: weekDays.map((day) {
+                    final isSelected = day == selectedDay;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedDay = day;
+                        });
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              isSelected ? AppColors.primary : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          getDayShorthand(day),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            // Timetable Content
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (isUsingSampleData)
-                            Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
+                  : dayTimetable.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 48,
+                                color: Colors.black26,
                               ),
-                              decoration: BoxDecoration(
-                                color: AppColors.badge.withAlpha(35),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Text(
-                                "Showing sample timetable data",
-                                style: TextStyle(
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w600,
+                              const SizedBox(height: 12),
+                              Text(
+                                "No classes on $selectedDay",
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black54,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ),
-                          Card(
-                            color: AppColors.card,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Table(
-                                  defaultColumnWidth:
-                                      const FixedColumnWidth(130),
-                                  border: TableBorder.all(
-                                    color: Colors.black12,
-                                    borderRadius: BorderRadius.circular(8),
+                            ],
+                          ),
+                        )
+                      : ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            if (isUsingSampleData)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.badge.withAlpha(35),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text(
+                                  "Showing sample timetable data",
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  children: [
-                                    TableRow(
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary.withAlpha(18),
-                                      ),
+                                ),
+                              ),
+                            ...dayTimetable.asMap().entries.map((entry) {
+                              final item = entry.value;
+                              final subject = item['subject'] ?? '-';
+                              final teacher = item['teacher'] ?? '-';
+                              final periodNum = item['period_number'] ?? '-';
+                              final periodInfo = periods.firstWhere(
+                                (p) =>
+                                    p['number'] ==
+                                    periodNum.toString(),
+                                orElse: () => {
+                                  'time': 'N/A',
+                                  'number': periodNum.toString()
+                                },
+                              );
+                              final time = periodInfo['time'] ?? 'N/A';
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Card(
+                                  color: AppColors.card,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 2,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
                                       children: [
-                                        const Padding(
-                                          padding: EdgeInsets.all(10),
-                                          child: Text(
-                                            "Day / Period",
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w700,
+                                        // Period Badge
+                                        Container(
+                                          width: 60,
+                                          height: 60,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary
+                                                .withAlpha(26),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Center(
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  "P$periodNum",
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.w700,
+                                                    color: AppColors.primary,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  time,
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    color: AppColors.primary,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
-                                        ...periods.map(
-                                          (period) => Padding(
-                                            padding: const EdgeInsets.all(10),
-                                            child: Text(
-                                              "P${period['number']}\n${period['time']}",
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 12,
+                                        const SizedBox(width: 16),
+                                        // Subject and Teacher
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                subject,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.black87,
+                                                ),
                                               ),
-                                              textAlign: TextAlign.center,
-                                            ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                teacher,
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.black54,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
-                                    ...weekDays.map(
-                                      (day) => TableRow(
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.all(10),
-                                            child: Text(
-                                              day,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                          ...periods.map(
-                                            (period) => Padding(
-                                              padding: const EdgeInsets.all(8),
-                                              child: Text(
-                                                slotText(
-                                                  day,
-                                                  int.parse(
-                                                    period['number']!,
-                                                  ),
-                                                ),
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                ),
-                                                textAlign: TextAlign.center,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                              );
+                            }),
+                          ],
+                        ),
             ),
           ],
         ),
@@ -2137,11 +2203,61 @@ class MessagesScreen extends StatefulWidget {
 class _MessagesScreenState extends State<MessagesScreen> {
   List chats = [];
   bool isLoading = true;
+  final TextEditingController searchController = TextEditingController();
+  String searchQuery = "";
+
+  List get groupChatsOnly {
+    return chats.where((chat) => chat['is_group'] == true).toList();
+  }
+
+  List get directChatsOnly {
+    return chats.where((chat) => chat['is_group'] != true).toList();
+  }
+
+  List get activeDirectChats {
+    return directChatsOnly.where((chat) {
+      final lastMessage = (chat['last_message'] ?? '').toString().trim();
+      return lastMessage.isNotEmpty;
+    }).toList();
+  }
+
+  List get teacherSearchResults {
+    final query = searchQuery.trim().toLowerCase();
+    if (query.isEmpty) {
+      return const [];
+    }
+
+    return directChatsOnly.where((chat) {
+      final roomName = (chat['name'] ?? '').toString().toLowerCase();
+      final className = (chat['class_name'] ?? '').toString().toLowerCase();
+      final memberNames = ((chat['member_names'] as List?) ?? [])
+          .map((e) => e.toString().toLowerCase())
+          .join(' ');
+
+      return roomName.contains(query) ||
+          className.contains(query) ||
+          memberNames.contains(query);
+    }).toList();
+  }
+
+  List get filteredChats {
+    if (searchQuery.trim().isNotEmpty) {
+      return teacherSearchResults;
+    }
+
+    return [...groupChatsOnly, ...activeDirectChats];
+  }
 
   @override
   void initState() {
     super.initState();
     fetchChats();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchChats() async {
@@ -2201,14 +2317,53 @@ class _MessagesScreenState extends State<MessagesScreen> {
               subtitle: widget.studentName,
               imageUrl: widget.studentImage,
             ),
+            if (!isLoading)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
+                  controller: searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: "Search teachers to start chat...",
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              searchController.clear();
+                              setState(() {
+                                searchQuery = "";
+                              });
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : chats.isEmpty
-                  ? const Center(
+                  : filteredChats.isEmpty
+                  ? Center(
                       child: Text(
-                        "No conversations available",
-                        style: TextStyle(
+                        searchQuery.trim().isEmpty
+                            ? "No chats found"
+                            : "No teachers found",
+                        style: const TextStyle(
                           fontSize: 16,
                           color: Colors.black54,
                           fontWeight: FontWeight.w500,
@@ -2217,9 +2372,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      itemCount: chats.length,
+                      itemCount: filteredChats.length,
                       itemBuilder: (context, index) {
-                        final chat = chats[index];
+                        final chat = filteredChats[index];
                         final roomName = chat['name'] ?? 'Chat';
                         final isGroup = chat['is_group'] == true;
                         final className = chat['class_name'] ?? '';
@@ -2283,8 +2438,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               size: 16,
                               color: Colors.black45,
                             ),
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => ChatDetailScreen(
@@ -2296,6 +2451,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                   ),
                                 ),
                               );
+
+                              if (mounted) {
+                                fetchChats();
+                              }
                             },
                           ),
                         );

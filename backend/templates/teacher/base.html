@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Teacher Dashboard{% endblock %}</title>
+
+    <!-- Bootstrap 5.3.0 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --teacher-sidebar-width: 250px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .sidebar {
+            height: 100vh;
+            background: linear-gradient(135deg, #1E3A8A 0%, #2D5CB8 100%);
+            color: white;
+            padding: 30px 20px;
+            position: fixed;
+            width: var(--teacher-sidebar-width);
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h4 {
+            margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar-menu li {
+            margin: 10px 0;
+        }
+
+        .sidebar-menu a {
+            color: rgba(255, 255, 255, 0.85);
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            min-height: 44px;
+        }
+
+        .sidebar-menu a:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar-menu a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: inset 3px 0 0 #bfdbfe;
+        }
+
+        .sidebar-menu a i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            margin-left: var(--teacher-sidebar-width);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e0e7ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-toggle-btn {
+            display: none;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #1E3A8A;
+            border-radius: 8px;
+            width: 38px;
+            height: 38px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-backdrop {
+            display: none;
+        }
+
+        .topbar h5 {
+            margin: 0;
+            color: #1E3A8A;
+            font-weight: 600;
+            font-size: 1.3rem;
+        }
+
+        .topbar-heading {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .topbar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #666;
+        }
+
+        .topbar .user-info i {
+            color: #1E3A8A;
+        }
+
+        .teacher-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #dbeafe;
+        }
+
+        .teacher-avatar-fallback {
+            color: #1E3A8A;
+            font-size: 1.4rem;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-logout {
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+            background-color: #fff5f5;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 8px 12px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1;
+        }
+
+        .btn-logout:hover {
+            color: #991b1b;
+            background-color: #fee2e2;
+            border-color: #f87171;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card h5 {
+            color: #1E3A8A;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            background-color: #1E3A8A;
+            border-color: #1E3A8A;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background-color: #2d5cb8;
+            border-color: #2d5cb8;
+        }
+
+        .btn-success {
+            background-color: #10b981;
+            border-color: #10b981;
+            font-weight: 500;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+            border-color: #059669;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #e0e7ff;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #1E3A8A;
+            box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        .alert-warning {
+            background-color: #fef3c7;
+            color: #78350f;
+        }
+
+        .alert-info {
+            background-color: #dbeafe;
+            color: #1e3a8a;
+        }
+
+        .table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table thead {
+            background-color: #1E3A8A;
+            color: white;
+        }
+
+        .table thead th {
+            border: none;
+            font-weight: 600;
+            padding: 15px;
+        }
+
+        .table tbody td {
+            padding: 15px;
+            border-color: #e0e7ff;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8faff;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-card h3 {
+            color: #1E3A8A;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .badge-primary {
+            background-color: #1E3A8A;
+        }
+
+        .thread-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1E3A8A;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .thread-card h5 {
+            color: #1E3A8A;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .message-item {
+            background-color: #f8faff;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .message-item strong {
+            color: #1E3A8A;
+        }
+
+        .reply-form {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e7ff;
+            display: flex;
+            gap: 10px;
+        }
+
+        .reply-form input {
+            flex: 1;
+        }
+
+        .stats-row {
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1E3A8A;
+        }
+
+        .stat-card .label {
+            color: #666;
+            margin-top: 10px;
+        }
+
+        /* Scrollbar styling */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 991.98px) {
+            .sidebar-toggle-btn {
+                display: inline-flex;
+            }
+
+            .sidebar {
+                width: 280px;
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                z-index: 1060;
+            }
+
+            body.sidebar-open .sidebar {
+                transform: translateX(0);
+            }
+
+            .sidebar-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.45);
+                z-index: 1050;
+            }
+
+            body.sidebar-open .sidebar-backdrop {
+                display: block;
+            }
+
+            .topbar {
+                padding: 14px 16px;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .topbar-actions {
+                margin-left: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="d-flex">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h4><i class="fas fa-chalkboard-user"></i> Teacher</h4>
+        
+        <ul class="sidebar-menu">
+            <li>
+                <a href="{% url 'teacher_dashboard' %}" class="{% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'enter_marks' %}" class="{% if request.resolver_match.url_name == 'enter_marks' %}active{% endif %}">
+                    <i class="fas fa-pen"></i> Enter Marks
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'generate_report_cards' %}" class="{% if request.resolver_match.url_name == 'generate_report_cards' or request.resolver_match.url_name == 'download_report_card_pdf' or request.resolver_match.url_name == 'download_class_report_cards_pdf' %}active{% endif %}">
+                    <i class="fas fa-file-lines"></i> Report Cards
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'upload_material' %}" class="{% if request.resolver_match.url_name == 'upload_material' %}active{% endif %}">
+                    <i class="fas fa-file-upload"></i> Materials
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'post_announcement' %}" class="{% if request.resolver_match.url_name == 'post_announcement' %}active{% endif %}">
+                    <i class="fas fa-bullhorn"></i> Announcements
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'teacher_messages' %}" class="{% if request.resolver_match.url_name == 'teacher_messages' or request.resolver_match.url_name == 'reply_message' %}active{% endif %}">
+                    <i class="fas fa-envelope"></i> Messages
+                </a>
+            </li>
+        </ul>
+
+    </div>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Main Content -->
+    <div class="main-content flex-grow-1">
+
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-heading">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="sidebar-toggle-btn" id="sidebarToggle" type="button" aria-label="Toggle menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h5 class="topbar-title">{% block page_title %}Dashboard{% endblock %}</h5>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <div class="user-info">
+                    {% if request.user.teacherprofile.photo %}
+                        <img src="{{ request.user.teacherprofile.photo.url }}" alt="Teacher Photo" class="teacher-avatar">
+                    {% else %}
+                        <i class="fas fa-user-circle teacher-avatar-fallback"></i>
+                    {% endif %}
+                    <span>{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                </div>
+                <a href="{% url 'logout' %}" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+
+            <!-- Messages Block -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <strong>
+                            {% if message.tags == 'success' %}
+                                <i class="fas fa-check-circle"></i>
+                            {% elif message.tags == 'error' %}
+                                <i class="fas fa-exclamation-circle"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i class="fas fa-exclamation-triangle"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle"></i>
+                            {% endif %}
+                        </strong>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Page Content -->
+            {% block content %}{% endblock %}
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function () {
+        const toggleBtn = document.getElementById("sidebarToggle");
+        const backdrop = document.getElementById("sidebarBackdrop");
+
+        if (!toggleBtn || !backdrop) {
+            return;
+        }
+
+        const closeSidebar = () => document.body.classList.remove("sidebar-open");
+
+        toggleBtn.addEventListener("click", function () {
+            document.body.classList.toggle("sidebar-open");
+        });
+
+        backdrop.addEventListener("click", closeSidebar);
+
+        window.addEventListener("resize", function () {
+            if (window.innerWidth > 991) {
+                closeSidebar();
+            }
+        });
+    })();
+</script>
+
+</body>
+</html>

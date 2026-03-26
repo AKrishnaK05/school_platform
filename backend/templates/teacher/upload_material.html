@@ -1,0 +1,91 @@
+{% extends "teacher/base.html" %}
+
+{% block page_title %}Upload Materials{% endblock %}
+
+{% block content %}
+
+    <div class="card form-card">
+        <h3>
+            <i class="fas fa-file-upload"></i> Upload Study Material
+        </h3>
+        <p class="text-muted mb-4">Share educational resources with your classes</p>
+
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label" for="title">
+                    <i class="fas fa-heading"></i> Title <span class="text-danger">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="title"
+                    name="title" 
+                    class="form-control" 
+                    placeholder="e.g., Chapter 5 Notes" 
+                    required
+                >
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="class">
+                            <i class="fas fa-door-open"></i> Class Section <span class="text-danger">*</span>
+                        </label>
+                        <select id="class" name="class" class="form-select" required>
+                            <option value="">Select a class...</option>
+                            {% for a in assignments %}
+                                <option value="{{ a.class_section.id }}">
+                                    {{ a.class_section }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="subject">
+                            <i class="fas fa-book"></i> Subject <span class="text-danger">*</span>
+                        </label>
+                        <select id="subject" name="subject" class="form-select" required>
+                            <option value="">Select a subject...</option>
+                            {% for a in assignments %}
+                                <option value="{{ a.subject.id }}">
+                                    {{ a.subject }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label" for="file">
+                    <i class="fas fa-file"></i> File <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                    <input 
+                        type="file" 
+                        id="file"
+                        name="file" 
+                        class="form-control" 
+                        required
+                    >
+                </div>
+                <small class="text-muted mt-2 d-block">Max file size: 50MB | Formats: PDF, DOC, DOCX, XLS, XLSX, PPT</small>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-upload"></i> Upload Material
+                </button>
+                <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </form>
+    </div>
+
+{% endblock %}

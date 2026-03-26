@@ -93,3 +93,47 @@ class Marks(models.Model):
 
     class Meta:
         unique_together = ("student", "subject", "exam")
+
+
+class ClassTeacher(models.Model):
+    """Designates a teacher as the class teacher for a class section."""
+    teacher = models.ForeignKey(
+        "accounts.TeacherProfile",
+        on_delete=models.CASCADE
+    )
+    class_section = models.OneToOneField(ClassSection, on_delete=models.CASCADE, related_name="class_teacher")
+
+    def __str__(self):
+        return f"{self.teacher} - Class Teacher of {self.class_section}"
+
+
+class Timetable(models.Model):
+    """Stores class timetable information."""
+    DAYS_OF_WEEK = [
+        ("MONDAY", "Monday"),
+        ("TUESDAY", "Tuesday"),
+        ("WEDNESDAY", "Wednesday"),
+        ("THURSDAY", "Thursday"),
+        ("FRIDAY", "Friday"),
+        ("SATURDAY", "Saturday"),
+    ]
+
+    class_section = models.ForeignKey(ClassSection, on_delete=models.CASCADE, related_name="timetables")
+    day = models.CharField(max_length=10, choices=DAYS_OF_WEEK)
+    period = models.IntegerField(help_text="Period number (1, 2, 3, etc.)")
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True)
+    teacher = models.ForeignKey(
+        "accounts.TeacherProfile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    class Meta:
+        unique_together = ("class_section", "day", "period")
+        ordering = ("day", "period")
+
+    def __str__(self):
+        return f"{self.class_section} - {self.day} Period {self.period}"

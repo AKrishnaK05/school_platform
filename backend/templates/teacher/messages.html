@@ -1,0 +1,262 @@
+{% extends "teacher/base.html" %}
+
+{% block page_title %}Messages{% endblock %}
+
+{% block content %}
+
+    <style>
+        .msg-thread-link {
+            padding: 12px 14px;
+            border-bottom: 1px solid #eef2f7;
+            background: #ffffff;
+            display: block;
+            text-decoration: none;
+        }
+
+        .msg-thread-link.active {
+            background: #e8eefc;
+        }
+
+        .msg-thread-title {
+            font-weight: 600;
+            color: #1E3A8A;
+        }
+
+        .msg-thread-parent {
+            font-size: 12px;
+        }
+
+        .msg-chat-window {
+            background-color: #F3F4F6;
+            min-height: 440px;
+            max-height: 440px;
+            overflow-y: auto;
+        }
+
+        .msg-bubble {
+            max-width: 76%;
+            border-radius: 12px;
+            padding: 10px 12px;
+        }
+
+        .msg-bubble.outgoing {
+            background-color: #1E3A8A;
+            color: #ffffff;
+        }
+
+        .msg-bubble.incoming {
+            background-color: #ffffff;
+            color: #111827;
+        }
+
+        .msg-sender {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .msg-bubble.outgoing .msg-sender,
+        .msg-bubble.outgoing .msg-time {
+            color: rgba(255, 255, 255, 0.75);
+            text-align: right;
+        }
+
+        .msg-bubble.incoming .msg-sender,
+        .msg-bubble.incoming .msg-time {
+            color: #6b7280;
+            text-align: left;
+        }
+
+        .msg-time {
+            margin-top: 6px;
+            font-size: 10px;
+        }
+
+        .msg-search-wrap {
+            background: #f8faff;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .msg-group-wrap {
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f7;
+            padding: 12px;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .msg-section-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1E3A8A;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin: 10px 12px 6px;
+        }
+
+        @media (max-width: 991.98px) {
+            .msg-chat-window {
+                min-height: 58vh;
+                max-height: 58vh;
+            }
+        }
+    </style>
+
+    <h3 style="color: #1E3A8A; font-weight: 600; margin-bottom: 30px;">
+        <i class="fas fa-envelope"></i> Parent Messages
+    </h3>
+
+    <div class="row g-3">
+        <div class="col-lg-4 {% if active_room or active_thread %}d-none d-lg-block{% endif %}">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 14px; overflow: hidden;">
+                <div class="px-3 py-3 bg-white border-bottom">
+                    <h5 class="mb-0" style="color: #1E3A8A; font-weight: 600;">
+                        <i class="fas fa-comments"></i> Chats
+                    </h5>
+                </div>
+
+                <div class="msg-search-wrap p-3">
+                    <form method="GET" action="{% url 'teacher_messages' %}">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                            <input
+                                type="text"
+                                name="q"
+                                class="form-control border-start-0"
+                                placeholder="Search chats"
+                                value="{{ search_query }}"
+                            >
+                            <button type="submit" class="btn btn-primary">Search</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div style="max-height: 560px; overflow-y: auto;">
+                    <div class="msg-section-label">Group Chats</div>
+                    {% for room in group_rooms %}
+                        <a
+                            href="{% url 'teacher_messages' %}?room={{ room.id }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                            class="msg-thread-link {% if active_room and active_room.id == room.id %}active{% endif %}"
+                        >
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div class="msg-thread-title"><i class="fas fa-users"></i> {{ room.name }}</div>
+                                    <div class="text-muted msg-thread-parent">{{ room.memberships.count }} members</div>
+                                </div>
+                            </div>
+                        </a>
+                    {% empty %}
+                        <div class="p-3 text-center text-muted">No group chats yet.</div>
+                    {% endfor %}
+
+                    <div class="msg-section-label">Direct Chats</div>
+                    {% for thread in threads %}
+                        <a
+                            href="{% url 'teacher_messages' %}?thread={{ thread.id }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                            class="msg-thread-link {% if active_thread and active_thread.id == thread.id %}active{% endif %}"
+                        >
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div class="msg-thread-title">{{ thread.student.full_name }}</div>
+                                    <div class="text-muted msg-thread-parent">{{ thread.parent.full_name|default:thread.parent.user.username }}</div>
+                                </div>
+                                <small class="text-muted" style="white-space: nowrap;">{{ thread.created_at|date:"M d" }}</small>
+                            </div>
+                        </a>
+                    {% empty %}
+                        <div class="p-3 text-center text-muted">No direct chats found.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 {% if not active_room and not active_thread %}d-none d-lg-block{% endif %}">
+            {% if active_room or active_thread %}
+                <div class="card border-0 shadow-sm" style="border-radius: 14px; overflow: hidden;">
+                    <div class="px-3 py-3 bg-white border-bottom">
+                        <a class="btn btn-sm btn-outline-primary d-lg-none mb-2" href="{% url 'teacher_messages' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}">
+                            <i class="fas fa-arrow-left"></i> Back to Chats
+                        </a>
+                        {% if active_room %}
+                            <h5 class="mb-0" style="color: #1E3A8A; font-weight: 600;">
+                                <i class="fas fa-users"></i> {{ active_room.name }}
+                            </h5>
+                            <small class="text-muted">Group conversation</small>
+                        {% else %}
+                            <h5 class="mb-0" style="color: #1E3A8A; font-weight: 600;">
+                                <i class="fas fa-user-circle"></i> {{ active_thread.student.full_name }}
+                            </h5>
+                            <small class="text-muted">Parent conversation</small>
+                        {% endif %}
+                    </div>
+
+                    <div id="chatMessages" class="p-3 msg-chat-window">
+                        {% if active_room %}
+                            {% for msg in active_room_messages %}
+                                <div class="d-flex mb-2 {% if msg.sender_id == request.user.id %}justify-content-end{% else %}justify-content-start{% endif %}">
+                                    <div class="msg-bubble {% if msg.sender_id == request.user.id %}outgoing{% else %}incoming{% endif %}">
+                                        <div class="msg-sender">{{ msg.sender.first_name }} {{ msg.sender.last_name }}</div>
+                                        <div>{{ msg.content }}</div>
+                                        <div class="msg-time">{{ msg.created_at|date:"M d, h:i A" }}</div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p class="text-muted text-center py-3 mb-0">No group messages yet</p>
+                            {% endfor %}
+                        {% else %}
+                            {% for msg in active_messages %}
+                                <div class="d-flex mb-2 {% if msg.sender_id == request.user.id %}justify-content-end{% else %}justify-content-start{% endif %}">
+                                    <div class="msg-bubble {% if msg.sender_id == request.user.id %}outgoing{% else %}incoming{% endif %}">
+                                        <div class="msg-sender">{{ msg.sender.first_name }} {{ msg.sender.last_name }}</div>
+                                        <div>{{ msg.content }}</div>
+                                        <div class="msg-time">{{ msg.timestamp|date:"M d, h:i A" }}</div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p class="text-muted text-center py-3 mb-0">No messages yet</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <form method="POST" action="{% url 'reply_message' %}" class="p-3" style="background-color: #F3F4F6; border-top: 1px solid #e5e7eb;">
+                        {% csrf_token %}
+                        {% if active_room %}
+                            <input type="hidden" name="room_id" value="{{ active_room.id }}">
+                        {% else %}
+                            <input type="hidden" name="thread_id" value="{{ active_thread.id }}">
+                        {% endif %}
+                        <div class="d-flex gap-2">
+                            <input
+                                type="text"
+                                name="content"
+                                class="form-control"
+                                style="border: none; border-radius: 12px; padding: 12px 14px;"
+                                placeholder="Type a message"
+                                required
+                            >
+                            <button type="submit" class="btn btn-primary" style="width: 46px; height: 46px; border-radius: 12px; padding: 0;">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            {% else %}
+                <div class="card border-0 shadow-sm" style="border-radius: 14px; overflow: hidden;">
+                    <div class="p-4 text-center text-muted">Select a chat to start messaging.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const chatBox = document.getElementById("chatMessages");
+            if (chatBox) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        })();
+    </script>
+
+{% endblock %}

@@ -39,6 +39,32 @@ class ConversationThread(models.Model):
         return f"{self.student.full_name} Thread"
 
 
+class ConversationGroup(models.Model):
+    teacher = models.ForeignKey(
+        TeacherProfile,
+        on_delete=models.CASCADE,
+        related_name="conversation_groups",
+    )
+    name = models.CharField(max_length=100)
+    threads = models.ManyToManyField(
+        ConversationThread,
+        related_name="conversation_groups",
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["teacher", "name"],
+                name="uniq_conversation_group_teacher_name",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.teacher.full_name})"
+
+
 class Message(models.Model):
     thread = models.ForeignKey(
         ConversationThread,

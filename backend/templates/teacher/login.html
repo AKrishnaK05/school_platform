@@ -1,15 +1,216 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at top right, rgba(45, 92, 184, 0.25), transparent 45%),
+                linear-gradient(180deg, #eef3ff 0%, #f4f6f9 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            padding: 24px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 960px;
+        }
+
+        .login-card {
+            border: none;
+            border-radius: 18px;
+            box-shadow: 0 20px 45px rgba(30, 58, 138, 0.12);
+            overflow: hidden;
+            background: white;
+        }
+
+        .brand-pane {
+            background: linear-gradient(140deg, #1E3A8A 0%, #2D5CB8 70%, #5d8cf0 100%);
+            color: #fff;
+            padding: 40px 34px;
+            min-height: 100%;
+        }
+
+        .brand-pane h2 {
+            font-weight: 700;
+            margin: 16px 0 10px;
+            letter-spacing: 0.2px;
+        }
+
+        .brand-pane p {
+            color: rgba(255, 255, 255, 0.88);
+            margin-bottom: 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .brand-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            font-size: 1.8rem;
+        }
+
+        .form-pane {
+            padding: 40px 34px;
+        }
+
+        .login-card h2 {
+            color: #1E3A8A;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .login-card .subtitle {
+            color: #64748b;
+            margin-bottom: 26px;
+            font-size: 0.95rem;
+        }
+
+        .field-label {
+            color: #1E3A8A;
+            font-size: 0.86rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 1px solid #e0e7ff;
+            padding: 12px 15px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #1E3A8A;
+            box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #1E3A8A 0%, #2D5CB8 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #1b347c 0%, #274fa2 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30, 58, 138, 0.3);
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        @media (max-width: 991px) {
+            .brand-pane {
+                border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+                border-radius: 0;
+            }
+
+            .form-pane {
+                padding-top: 30px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h2>Teacher Login</h2>
-    <form method="POST">
-        {% csrf_token %}
-        <input type="text" name="username" placeholder="Username" required />
-        <input type="password" name="password" placeholder="Password" required />
-        <button type="submit">Login</button>
-    </form>
+
+<div class="login-container">
+    <div class="card login-card">
+        <div class="row g-0">
+            <div class="col-lg-5">
+                <div class="brand-pane d-flex flex-column justify-content-center h-100">
+                    <div class="brand-icon">
+                        <i class="fas fa-chalkboard-user"></i>
+                    </div>
+                    <h2>Teacher Portal</h2>
+                    <p>
+                        Manage attendance, marks, report cards, and parent communication from a single dashboard.
+                    </p>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="form-pane">
+                    <h2>Welcome Back</h2>
+                    <p class="subtitle">Sign in with your teacher credentials</p>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+                        <label class="field-label" for="username">Username</label>
+                        <input
+                            id="username"
+                            type="text"
+                            name="username"
+                            class="form-control"
+                            placeholder="Enter username"
+                            required
+                            autofocus
+                        />
+
+                        <label class="field-label" for="password">Password</label>
+                        <input
+                            id="password"
+                            type="password"
+                            name="password"
+                            class="form-control"
+                            placeholder="Enter password"
+                            required
+                        />
+
+                        <button type="submit" class="btn-login">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

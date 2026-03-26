@@ -317,12 +317,14 @@ def chat_rooms_v2(request):
     if student_id:
         try:
             selected_student = Student.objects.get(id=int(student_id))
+            canonical_group_name = f"{selected_student.class_section} Group"
             rooms_query = rooms_query.filter(
                 student_id=selected_student.id,
                 class_section_id=selected_student.class_section_id,
             ) | rooms_query.filter(
                 is_group=True,
                 class_section_id=selected_student.class_section_id,
+                name=canonical_group_name,
             )
             rooms_query = rooms_query.distinct()
         except (Student.DoesNotExist, ValueError, TypeError):

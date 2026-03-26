@@ -1,0 +1,129 @@
+{% extends "teacher/base.html" %}
+
+{% block page_title %}Generate Report Cards{% endblock %}
+
+{% block content %}
+<div class="card form-card">
+    <h3>
+        <i class="fas fa-file-lines"></i> Generate Report Cards
+    </h3>
+    <p class="text-muted mb-4">Select class and exam to preview scores and generate report card records.</p>
+
+    <form method="GET" class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label">Class</label>
+            <select name="class" class="form-select" required>
+                <option value="">Select class...</option>
+                {% for a in assignments %}
+                    <option value="{{ a.class_section.id }}" {% if selected_class == a.class_section.id %}selected{% endif %}>
+                        {{ a.class_section }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Exam</label>
+            <select name="exam" class="form-select" required>
+                <option value="">Select exam...</option>
+                {% for exam in exams %}
+                    <option value="{{ exam.id }}" {% if selected_exam == exam.id %}selected{% endif %}>
+                        {{ exam.name }} ({{ exam.academic_year }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12">
+            <button class="btn btn-primary">
+                <i class="fas fa-filter"></i> Preview
+            </button>
+        </div>
+    </form>
+
+    {% if report_preview %}
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="class" value="{{ selected_class }}">
+            <input type="hidden" name="exam" value="{{ selected_exam }}">
+
+            <div class="table-responsive mb-3">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Subjects Marked</th>
+                            <th>Total</th>
+                            <th>Percentage</th>
+                            <th>Grade</th>
+                            <th>Remarks</th>
+                            <th>Generated</th>
+                            <th>Published</th>
+                            <th>PDF</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report_preview %}
+                            <tr>
+                                <td>{{ row.student.full_name }}</td>
+                                <td>{{ row.subject_count }}</td>
+                                <td>{{ row.total }}</td>
+                                <td>{{ row.percentage }}%</td>
+                                <td><span class="badge text-bg-primary">{{ row.grade }}</span></td>
+                                <td style="min-width: 220px;">
+                                    <textarea
+                                        class="form-control form-control-sm"
+                                        rows="2"
+                                        name="remark_{{ row.student.id }}"
+                                        placeholder="Optional remarks"
+                                    >{{ row.remarks }}</textarea>
+                                </td>
+                                <td>
+                                    {% if row.is_generated %}
+                                        <span class="badge text-bg-success">Yes</span>
+                                    {% else %}
+                                        <span class="badge text-bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.is_published %}
+                                        <span class="badge text-bg-success">Published</span>
+                                    {% else %}
+                                        <span class="badge text-bg-warning">Draft</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a
+                                        href="{% url 'download_report_card_pdf' row.student.id selected_exam %}"
+                                        class="btn btn-sm btn-outline-primary"
+                                    >
+                                        <i class="fas fa-file-pdf"></i> Download
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-success" name="action" value="generate">
+                    <i class="fas fa-file-circle-check"></i> Generate Report Cards
+                </button>
+                <button class="btn btn-primary" name="action" value="publish">
+                    <i class="fas fa-bullhorn"></i> Publish to Parents
+                </button>
+                <button class="btn btn-outline-secondary" name="action" value="unpublish">
+                    <i class="fas fa-eye-slash"></i> Unpublish
+                </button>
+                <a
+                    href="{% url 'download_class_report_cards_pdf' selected_class selected_exam %}"
+                    class="btn btn-outline-primary"
+                >
+                    <i class="fas fa-download"></i> Download Class PDF
+                </a>
+            </div>
+        </form>
+    {% elif selected_class or selected_exam %}
+        <div class="alert alert-info">No marks found yet for the selected class/exam.</div>
+    {% endif %}
+</div>
+{% endblock %}

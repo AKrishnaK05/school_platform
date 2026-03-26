@@ -1,0 +1,205 @@
+{% extends "teacher/base.html" %}
+
+{% block page_title %}Timetable{% endblock %}
+
+{% block content %}
+
+    <style>
+        .timetable-header {
+            color: #1E3A8A;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .timetable-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .timetable-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            min-width: 700px;
+        }
+
+        .timetable-table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .timetable-table thead {
+            background-color: #1E3A8A;
+            color: white;
+        }
+
+        .timetable-table th {
+            padding: 15px;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .timetable-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e7ff;
+        }
+
+        .timetable-table tbody tr:hover {
+            background-color: #f8faff;
+        }
+
+        .timetable-table input,
+        .timetable-table select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e0e7ff;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .timetable-table input:focus,
+        .timetable-table select:focus {
+            border-color: #1E3A8A;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.1);
+        }
+
+        .btn-save {
+            background-color: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-save:hover {
+            background-color: #059669;
+            transform: translateY(-2px);
+        }
+
+        .class-info {
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #1e3a8a;
+            font-weight: 500;
+        }
+
+        .empty-timetable {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        @media (max-width: 991.98px) {
+            .timetable-container {
+                padding: 16px;
+            }
+
+            .btn-save {
+                width: 100%;
+            }
+        }
+    </style>
+
+    <h3 class="timetable-header">
+        <i class="fas fa-calendar-alt"></i> Class Timetable
+    </h3>
+
+    <div class="timetable-container">
+        <div class="class-info">
+            <i class="fas fa-info-circle"></i> Class: <strong>{{ class_section }}</strong>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if timetables %}
+            <form method="POST">
+                {% csrf_token %}
+                <div class="timetable-table-wrap">
+                    <table class="timetable-table">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Period</th>
+                                <th>Subject</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for timetable in timetables %}
+                                <tr>
+                                    <td>
+                                        <select name="day_{{ timetable.id }}">
+                                            {% for day_code, day_name in days %}
+                                                <option value="{{ day_code }}" {% if timetable.day == day_code %}selected{% endif %}>
+                                                    {{ day_name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input 
+                                            type="number" 
+                                            name="period_{{ timetable.id }}" 
+                                            value="{{ timetable.period }}" 
+                                            min="1" 
+                                            max="10"
+                                        >
+                                    </td>
+                                    <td>
+                                        <select name="subject_{{ timetable.id }}">
+                                            <option value="">Select Subject</option>
+                                            {% for subject in subjects %}
+                                                <option value="{{ subject.id }}" {% if timetable.subject.id == subject.id %}selected{% endif %}>
+                                                    {{ subject.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input 
+                                            type="time" 
+                                            name="start_time_{{ timetable.id }}" 
+                                            value="{% if timetable.start_time %}{{ timetable.start_time|date:'H:i' }}{% endif %}"
+                                        >
+                                    </td>
+                                    <td>
+                                        <input 
+                                            type="time" 
+                                            name="end_time_{{ timetable.id }}" 
+                                            value="{% if timetable.end_time %}{{ timetable.end_time|date:'H:i' }}{% endif %}"
+                                        >
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <button type="submit" class="btn-save">
+                    <i class="fas fa-save"></i> Save Timetable
+                </button>
+            </form>
+        {% else %}
+            <div class="empty-timetable">
+                <i class="fas fa-calendar-times" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <p>No timetable periods created yet. Please create periods in the admin panel first.</p>
+            </div>
+        {% endif %}
+    </div>
+
+{% endblock %}

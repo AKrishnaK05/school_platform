@@ -1,0 +1,69 @@
+{% extends "teacher/base.html" %}
+
+{% block page_title %}Post Announcement{% endblock %}
+
+{% block content %}
+
+    <div class="card form-card">
+        <h3>
+            <i class="fas fa-bullhorn"></i> Post Announcement
+        </h3>
+        <p class="text-muted mb-4">Send important updates to your classes</p>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label" for="title">
+                    <i class="fas fa-heading"></i> Title <span class="text-danger">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="title"
+                    name="title" 
+                    class="form-control" 
+                    placeholder="e.g., Exam Schedule Updated" 
+                    required
+                >
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="body">
+                    <i class="fas fa-pen"></i> Message <span class="text-danger">*</span>
+                </label>
+                <textarea 
+                    id="body"
+                    name="body" 
+                    class="form-control" 
+                    placeholder="Type your announcement here..." 
+                    rows="6"
+                    required
+                ></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label" for="class">
+                    <i class="fas fa-door-open"></i> Class Section <span class="text-danger">*</span>
+                </label>
+                <select id="class" name="class" class="form-select" required>
+                    <option value="">Select a class...</option>
+                    {% for a in assignments %}
+                        <option value="{{ a.class_section.id }}">
+                            {{ a.class_section }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-share"></i> Post Announcement
+                </button>
+                <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </form>
+    </div>
+
+{% endblock %}

@@ -11,6 +11,12 @@ class ReportCardSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "exam",
+            "total",
+            "percentage",
+            "grade",
+            "remarks",
+            "is_published",
+            "published_on",
             "pdf_file",
             "generated_on",
         ]

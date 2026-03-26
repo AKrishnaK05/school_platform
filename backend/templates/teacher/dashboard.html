@@ -1,16 +1,113 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Teacher Dashboard</title>
-</head>
-<body>
-    <h2>Welcome {{ teacher.user.username }}</h2>
+{% extends "teacher/base.html" %}
 
-    <ul>
-        <li><a href="#">Mark Attendance</a></li>
-        <li><a href="#">Upload Materials</a></li>
-        <li><a href="#">Post Announcement</a></li>
-        <li><a href="#">View Messages</a></li>
-    </ul>
-</body>
-</html>
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+    <h3 style="color: #1E3A8A; font-weight: 600; margin-bottom: 30px;">
+        <i class="fas fa-home"></i> Your Classes
+    </h3>
+
+    {% if is_class_teacher %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-star"></i> <strong>Class Teacher Privileges:</strong> You are the class teacher for <strong>{{ class_teacher_class }}</strong>. 
+            Only you can mark attendance and manage the timetable for this class.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <div class="row">
+        {% for a in assignments %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <h5 class="card-title mb-0">{{ a.class_section }}</h5>
+                        <span class="badge badge-primary ms-auto">{{ a.subject }}</span>
+                    </div>
+                    <p class="card-text text-muted mb-3">
+                        <i class="fas fa-book"></i> {{ a.subject.name }}
+                    </p>
+                    {% if is_class_teacher and class_teacher_class.id == a.class_section.id %}
+                        <a href="/teacher/attendance/{{ a.class_section.id }}/" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-clipboard-list"></i> Mark Attendance
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle"></i> No class assignments found.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <hr style="margin: 40px 0; border-color: #e0e7ff;">
+
+    <h4 style="color: #1E3A8A; font-weight: 600; margin-bottom: 20px;">
+        <i class="fas fa-zap"></i> Quick Actions
+    </h4>
+
+    <div class="row">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <a href="/teacher/marks/" class="card text-decoration-none text-dark" style="transition: all 0.3s ease;">
+                <div class="card-body text-center py-4">
+                    <i class="fas fa-pen" style="font-size: 2rem; color: #1E3A8A; margin-bottom: 10px;"></i>
+                    <h6 class="card-title">Enter Marks</h6>
+                    <p class="card-text text-muted small">Save exam scores</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <a href="/teacher/report-cards/" class="card text-decoration-none text-dark" style="transition: all 0.3s ease;">
+                <div class="card-body text-center py-4">
+                    <i class="fas fa-file-lines" style="font-size: 2rem; color: #1E3A8A; margin-bottom: 10px;"></i>
+                    <h6 class="card-title">Generate Report Cards</h6>
+                    <p class="card-text text-muted small">Create class report cards</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <a href="/teacher/materials/" class="card text-decoration-none text-dark" style="transition: all 0.3s ease;">
+                <div class="card-body text-center py-4">
+                    <i class="fas fa-file-upload" style="font-size: 2rem; color: #1E3A8A; margin-bottom: 10px;"></i>
+                    <h6 class="card-title">Upload Materials</h6>
+                    <p class="card-text text-muted small">Share study resources</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <a href="/teacher/announcements/" class="card text-decoration-none text-dark" style="transition: all 0.3s ease;">
+                <div class="card-body text-center py-4">
+                    <i class="fas fa-bullhorn" style="font-size: 2rem; color: #1E3A8A; margin-bottom: 10px;"></i>
+                    <h6 class="card-title">Post Announcements</h6>
+                    <p class="card-text text-muted small">Notify your classes</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <a href="/teacher/messages/" class="card text-decoration-none text-dark" style="transition: all 0.3s ease;">
+                <div class="card-body text-center py-4">
+                    <i class="fas fa-envelope" style="font-size: 2rem; color: #1E3A8A; margin-bottom: 10px;"></i>
+                    <h6 class="card-title">View Messages</h6>
+                    <p class="card-text text-muted small">Communicate with parents</p>
+                </div>
+            </a>
+        </div>
+        {% if is_class_teacher %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <a href="/teacher/timetable/" class="card text-decoration-none text-dark" style="transition: all 0.3s ease;">
+                <div class="card-body text-center py-4">
+                    <i class="fas fa-calendar-alt" style="font-size: 2rem; color: #10b981; margin-bottom: 10px;"></i>
+                    <h6 class="card-title">Manage Timetable</h6>
+                    <p class="card-text text-muted small">Edit class schedule</p>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+{% endblock %}
