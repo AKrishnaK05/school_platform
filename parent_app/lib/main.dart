@@ -291,7 +291,7 @@ class ParentApp extends StatelessWidget {
         '/snitch/login': (ctx) => const SnitchLogin(),
         '/snitch/login-web': (ctx) => const SnitchLogin(),
       },
-      home: SplashScreen(),
+      home: enableSnitch ? const SnitchDashboard() : SplashScreen(),
     );
   }
 }
