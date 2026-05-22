@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>EduParent - Parent Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface": "#f8f9ff",
+                    "on-secondary": "#ffffff",
+                    "outline": "#737781",
+                    "surface-bright": "#f8f9ff",
+                    "on-secondary-container": "#00722f",
+                    "primary-fixed-dim": "#a6c8ff",
+                    "on-primary": "#ffffff",
+                    "surface-container-high": "#dce9ff",
+                    "on-background": "#0b1c30",
+                    "inverse-surface": "#213145",
+                    "tertiary": "#4a2e00",
+                    "on-primary-fixed-variant": "#144780",
+                    "surface-container-low": "#eff4ff",
+                    "tertiary-fixed-dim": "#ffb957",
+                    "tertiary-container": "#694200",
+                    "secondary": "#006e2c",
+                    "on-error": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#ffddb5",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed": "#2a1800",
+                    "on-secondary-fixed-variant": "#005320",
+                    "inverse-primary": "#a6c8ff",
+                    "primary": "#003466",
+                    "on-primary-container": "#93bcfc",
+                    "inverse-on-surface": "#eaf1ff",
+                    "secondary-fixed-dim": "#6ddd81",
+                    "secondary-fixed": "#89fa9b",
+                    "on-secondary-fixed": "#002108",
+                    "on-surface": "#0b1c30",
+                    "background": "#f8f9ff",
+                    "secondary-container": "#86f898",
+                    "surface-container-highest": "#d3e4fe",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#c3c6d1",
+                    "primary-container": "#1a4b84",
+                    "on-tertiary-fixed-variant": "#643f00",
+                    "on-surface-variant": "#424750",
+                    "surface-tint": "#335f99",
+                    "surface-container": "#e5eeff",
+                    "on-primary-fixed": "#001c3b",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#cbdbf5",
+                    "error-container": "#ffdad6",
+                    "surface-variant": "#d3e4fe",
+                    "on-tertiary-container": "#fbaa27",
+                    "primary-fixed": "#d5e3ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-padding-mobile": "16px",
+                    "stack-gap-lg": "24px",
+                    "container-padding-desktop": "32px",
+                    "gutter": "16px",
+                    "unit": "8px",
+                    "stack-gap-sm": "8px",
+                    "stack-gap-md": "16px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "headline-md": ["Manrope"],
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg-mobile": ["Manrope"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Manrope"]
+            },
+            "fontSize": {
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bento-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .bento-card:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-container-padding-mobile h-16 bg-surface dark:bg-background shadow-[0px_4px_12px_rgba(0,0,0,0.05)]">
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed p-2 hover:bg-surface-container-low dark:hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150 ease-in-out" id="drawer-trigger">menu</button>
+<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed">EduParent</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed p-2 hover:bg-surface-container-low dark:hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150 ease-in-out">notifications</button>
+<img alt="Student Profile Avatar" class="w-8 h-8 rounded-full object-cover border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEMQgDE9OrVQ4Drq0e2-A30O_pgIEkCPh_s9V1ymeAiJra58lpO0LpE0n1VkJKMya_W5bujYECtmJZg0zcr4_IwyPogYKqHjt2w880gUgXsy6J8p_F7o9Ro0ySO56odRaeJowXsuWYHTu522dz0gAc1r9dgPx5l-wtt2tEOiNz28oVaj2Hg02KdRz7TcVhTYm1j4H2BWQaSFJFjsQPHngn4PGnBapbc3AaSV0_nyhpaDVYq0uFixlRJccUTwQ0_6WTNb4sl-PO26Ow"/>
+</div>
+</header>
+<main class="pt-20 pb-28 px-container-padding-mobile max-w-[1200px] mx-auto space-y-stack-gap-lg">
+<!-- Welcome Section -->
+<section class="mt-4">
+<div class="flex flex-col"><div class="flex justify-between items-end">
+<div>
+<p class="font-label-md text-label-md text-outline tracking-wider uppercase mb-1">Student Dashboard</p>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Alex Johnson</h2>
+<p class="text-on-surface-variant font-body-md text-body-md">Westside High • Grade 10-B</p>
+</div>
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full text-label-md font-label-md">Active</span>
+</div></div>
+</section>
+<!-- Quick Actions -->
+<section class="grid grid-cols-2 gap-gutter">
+<button class="flex items-center justify-center gap-2 h-12 bg-primary text-on-primary rounded-xl font-label-md text-label-md shadow-sm active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined text-[20px]" data-icon="event_busy">event_busy</span>
+                Report Absence
+            </button>
+<button class="flex items-center justify-center gap-2 h-12 border-2 border-primary text-primary rounded-xl font-label-md text-label-md shadow-sm active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined text-[20px]" data-icon="payments">payments</span>
+                Pay Fees
+            </button>
+</section>
+<!-- At a Glance: Bento Grid -->
+<section class="space-y-stack-gap-md">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-on-surface">At a Glance</h3>
+</div>
+<div class="grid grid-cols-2 grid-rows-2 gap-gutter aspect-square md:aspect-auto md:h-48 md:grid-cols-4">
+<!-- Attendance Card -->
+<div class="bento-card col-span-1 row-span-1 bg-surface-container-lowest border border-outline-variant p-4 flex flex-col justify-between rounded-2xl shadow-md" style="box-shadow: rgba(0, 0, 0, 0.05) 0px 4px 12px;">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-secondary" data-icon="person_check">person_check</span>
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">Excellent</span>
+</div>
+<div>
+<p class="text-headline-lg-mobile font-headline-lg-mobile text-on-surface">98%</p>
+<p class="text-label-sm font-label-sm text-outline">Attendance</p>
+</div>
+</div>
+<!-- Grade Card -->
+<div class="bento-card col-span-1 row-span-1 bg-surface-container-lowest border border-outline-variant p-4 flex flex-col justify-between rounded-2xl shadow-md" style="box-shadow: rgba(0, 0, 0, 0.05) 0px 4px 12px;">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-primary" data-icon="auto_stories">auto_stories</span>
+<span class="text-label-sm font-label-sm text-outline">Math</span>
+</div>
+<div>
+<p class="text-headline-lg-mobile font-headline-lg-mobile text-on-surface">A-</p>
+<p class="text-label-sm font-label-sm text-outline">Recent Grade</p>
+</div>
+</div>
+<!-- Upcoming Event Card -->
+<div class="bento-card md:col-span-1 row-span-1 bg-surface-container-high border border-outline-variant p-4 flex flex-col justify-between overflow-hidden relative rounded-2xl shadow-md col-span-1" style="box-shadow: rgba(0, 0, 0, 0.05) 0px 4px 12px;">
+<div class="z-10">
+<span class="material-symbols-outlined text-on-tertiary-container" data-icon="science">science</span>
+<p class="mt-2 text-headline-md font-headline-md text-on-surface leading-tight">Science Fair</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Friday • 10:00 AM</p>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-[80px]" data-icon="calendar_month">calendar_month</span>
+</div>
+</div>
+<!-- Timetable Card -->
+<div class="bento-card col-span-1 row-span-1 bg-surface-container-lowest border border-outline-variant p-4 flex flex-col justify-between rounded-2xl shadow-md cursor-pointer group" style="box-shadow: rgba(0, 0, 0, 0.05) 0px 4px 12px;">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-tertiary-container" data-icon="schedule">schedule</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="arrow_forward">arrow_forward</span>
+</div>
+<div>
+<p class="text-body-lg font-bold text-on-surface leading-tight">Timetable</p>
+<p class="text-label-sm font-label-sm text-outline">View Full Schedule</p>
+</div>
+</div></div>
+</section>
+<!-- Announcements Section -->
+<section class="space-y-stack-gap-md">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-on-surface">Recent Announcements</h3>
+<button class="text-primary font-label-md text-label-md">View All</button>
+</div>
+<div class="space-y-stack-gap-md">
+<!-- Announcement Item 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 flex gap-4 items-start active:bg-surface-container-low transition-colors cursor-pointer rounded-2xl shadow-md" style="box-shadow: rgba(0, 0, 0, 0.05) 0px 4px 12px;">
+<div class="w-12 h-12 shrink-0 rounded-lg bg-tertiary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-fixed" data-icon="campaign">campaign</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h4 class="font-body-lg text-body-lg font-bold text-on-surface">PTA Meeting Rescheduled</h4>
+<span class="text-label-sm font-label-sm text-outline">2h ago</span>
+</div>
+<p class="text-body-md text-on-surface-variant line-clamp-2 mt-1">The monthly PTA meeting has been moved to next Tuesday at 6:00 PM in the Main Hall.</p>
+</div>
+</div>
+<!-- Announcement Item 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 flex gap-4 items-start active:bg-surface-container-low transition-colors cursor-pointer rounded-2xl shadow-md">
+<div class="w-12 h-12 shrink-0 rounded-lg bg-secondary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-fixed" data-icon="sports_soccer">sports_soccer</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h4 class="font-body-lg text-body-lg font-bold text-on-surface">Sports Day Sign-ups</h4>
+<span class="text-label-sm font-label-sm text-outline">Yesterday</span>
+</div>
+<p class="text-body-md text-on-surface-variant line-clamp-2 mt-1">Registrations for the Annual Sports Day are now open. Check the portal for event lists.</p>
+</div>
+</div>
+<!-- Announcement Item 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 flex gap-4 items-start active:bg-surface-container-low transition-colors cursor-pointer rounded-2xl shadow-md">
+<div class="w-12 h-12 shrink-0 rounded-lg bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed" data-icon="bus_alert">bus_alert</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h4 class="font-body-lg text-body-lg font-bold text-on-surface">Route 4 Delay</h4>
+<span class="text-label-sm font-label-sm text-outline">1d ago</span>
+</div>
+<p class="text-body-md text-on-surface-variant line-clamp-2 mt-1">Please note that school bus Route 4 will be delayed by 15 minutes this week due to roadworks.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-outline-variant dark:border-outline shadow-[0px_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed hover:bg-surface-container-high dark:hover:bg-surface-variant transition-transform duration-200 active:scale-90" href="#">
+<div class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-4 py-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+</div>
+<span class="font-label-md text-label-md font-bold">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-transform duration-200 active:scale-90 px-4 py-1" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-transform duration-200 active:scale-90 px-4 py-1" href="#">
+<span class="material-symbols-outlined">grade</span>
+<span class="font-label-md text-label-md">Grades</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-transform duration-200 active:scale-90 px-4 py-1" href="#">
+<span class="material-symbols-outlined">chat</span>
+<span class="font-label-md text-label-md">Messages</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.bento-card, .bg-surface-container-lowest').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.boxShadow = '0px 10px 25px rgba(0, 0, 0, 0.08)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.boxShadow = '0px 4px 12px rgba(0, 0, 0, 0.05)';
+            });
+        });
+    </script>
+<div class="fixed inset-0 bg-black/50 z-[60] hidden transition-opacity duration-300" id="nav-drawer-overlay"></div>
+<aside class="fixed inset-y-0 left-0 z-[70] w-80 bg-surface dark:bg-surface-dim shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col p-stack-gap-md rounded-r-xl" id="nav-drawer">
+<div class="p-6 border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<img alt="Student Portrait" class="w-12 h-12 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEMQgDE9OrVQ4Drq0e2-A30O_pgIEkCPh_s9V1ymeAiJra58lpO0LpE0n1VkJKMya_W5bujYECtmJZg0zcr4_IwyPogYKqHjt2w880gUgXsy6J8p_F7o9Ro0ySO56odRaeJowXsuWYHTu522dz0gAc1r9dgPx5l-wtt2tEOiNz28oVaj2Hg02KdRz7TcVhTYm1j4H2BWQaSFJFjsQPHngn4PGnBapbc3AaSV0_nyhpaDVYq0uFixlRJccUTwQ0_6WTNb4sl-PO26Ow"/>
+<div>
+<h2 class="font-headline-md text-headline-md text-primary font-bold">Alex Johnson</h2>
+<p class="text-body-md text-on-surface-variant">Grade 10-B • Westside High</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 py-2 space-y-2 overflow-y-auto">
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined">info</span>
+<span class="font-body-lg">Student Info</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 bg-secondary-container text-on-secondary-container font-bold rounded-full transition-all active:opacity-80 ring-2 ring-primary-fixed-fixed" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-body-lg">Schedule/Timetable</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined">event</span>
+<span class="font-body-lg">School Calendar</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-body-lg">Fee Payments</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-lg">Settings</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-body-lg">Support</span>
+</a>
+</nav>
+</aside><script class="">
+  const drawerTrigger = document.getElementById('drawer-trigger');
+  const drawer = document.getElementById('nav-drawer');
+  const overlay = document.getElementById('nav-drawer-overlay');
+
+  const toggleDrawer = () => {
+    drawer.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+    overlay.classList.toggle('opacity-100');
+  };
+
+  drawerTrigger.addEventListener('click', toggleDrawer);
+  overlay.addEventListener('click', toggleDrawer);
+</script>
+</body></html>

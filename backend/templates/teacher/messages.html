@@ -26,6 +26,27 @@
             font-size: 12px;
         }
 
+        .msg-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid #dbeafe;
+        }
+
+        .msg-avatar-fallback {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #e8eefc;
+            color: #1E3A8A;
+            border: 1px solid #dbeafe;
+            font-size: 0.95rem;
+        }
+
         .msg-chat-window {
             background-color: #F3F4F6;
             min-height: 440px;
@@ -158,9 +179,16 @@
                             class="msg-thread-link {% if active_thread and active_thread.id == thread.id %}active{% endif %}"
                         >
                             <div class="d-flex justify-content-between align-items-start gap-2">
-                                <div>
+                                <div class="d-flex align-items-start gap-2">
+                                    {% if thread.student.photo %}
+                                        <img src="{{ thread.student.photo.url }}" alt="{{ thread.student.full_name }}" class="msg-avatar">
+                                    {% else %}
+                                        <span class="msg-avatar-fallback"><i class="fas fa-user-graduate"></i></span>
+                                    {% endif %}
+                                    <div>
                                     <div class="msg-thread-title">{{ thread.student.full_name }}</div>
                                     <div class="text-muted msg-thread-parent">{{ thread.parent.full_name|default:thread.parent.user.username }}</div>
+                                    </div>
                                 </div>
                                 <small class="text-muted" style="white-space: nowrap;">{{ thread.created_at|date:"M d" }}</small>
                             </div>
@@ -185,9 +213,16 @@
                             </h5>
                             <small class="text-muted">Group conversation</small>
                         {% else %}
-                            <h5 class="mb-0" style="color: #1E3A8A; font-weight: 600;">
-                                <i class="fas fa-user-circle"></i> {{ active_thread.student.full_name }}
-                            </h5>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if active_thread.student.photo %}
+                                    <img src="{{ active_thread.student.photo.url }}" alt="{{ active_thread.student.full_name }}" class="msg-avatar">
+                                {% else %}
+                                    <span class="msg-avatar-fallback"><i class="fas fa-user-graduate"></i></span>
+                                {% endif %}
+                                <h5 class="mb-0" style="color: #1E3A8A; font-weight: 600;">
+                                    {{ active_thread.student.full_name }}
+                                </h5>
+                            </div>
                             <small class="text-muted">Parent conversation</small>
                         {% endif %}
                     </div>

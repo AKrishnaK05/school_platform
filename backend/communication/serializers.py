@@ -62,6 +62,7 @@ class ChatMessageSerializer(serializers.Serializer):
 class ChatRoomSerializer(serializers.Serializer):
     room_id = serializers.IntegerField()
     name = serializers.CharField()
+    avatar_url = serializers.CharField(allow_blank=True)
     is_group = serializers.BooleanField()
     student_id = serializers.IntegerField(allow_null=True)
     class_name = serializers.CharField(allow_blank=True)
@@ -75,5 +76,6 @@ class ChatRoomMessageSerializer(serializers.Serializer):
     room_id = serializers.IntegerField()
     sender_id = serializers.IntegerField()
     sender_name = serializers.CharField()
+    sender_avatar_url = serializers.CharField(allow_blank=True)
     content = serializers.CharField()
     created_at = serializers.DateTimeField()
