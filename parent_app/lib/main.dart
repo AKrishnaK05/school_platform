@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'screens/snitch/snitch_dashboard.dart';
 import 'screens/snitch/snitch_assignments.dart';
 import 'screens/snitch/snitch_marks.dart';
+import 'screens/snitch/snitch_login.dart';
 
 // Snitch feature flag: enable to surface prototype screens from Stitch
 const bool enableSnitch = true;
@@ -287,6 +288,8 @@ class ParentApp extends StatelessWidget {
         '/snitch/dashboard': (ctx) => const SnitchDashboard(),
         '/snitch/assignments': (ctx) => const SnitchAssignments(),
         '/snitch/marks': (ctx) => const SnitchMarks(),
+        '/snitch/login': (ctx) => const SnitchLogin(),
+        '/snitch/login-web': (ctx) => const SnitchLogin(),
       },
       home: SplashScreen(),
     );
