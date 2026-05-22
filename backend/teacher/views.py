@@ -134,6 +134,28 @@ def _render_report_card_pdf(report_card):
     return buffer
 
 
+def _sync_thread_message_to_direct_room(thread, sender_user, content):
+    room, _ = ChatRoom.objects.get_or_create(
+        is_group=False,
+        student_id=thread.student_id,
+        direct_teacher_id=thread.teacher_id,
+        defaults={
+            "name": thread.teacher.full_name,
+            "class_section_id": thread.student.class_section_id,
+            "created_by_id": sender_user.id,
+        },
+    )
+
+    ChatRoomMember.objects.get_or_create(room_id=room.id, user_id=thread.parent.user_id)
+    ChatRoomMember.objects.get_or_create(room_id=room.id, user_id=thread.teacher.user_id)
+
+    latest = room.messages.order_by("-created_at").first()
+    if latest and latest.sender_id == sender_user.id and latest.content == content:
+        return
+
+    ChatRoomMessage.objects.create(room_id=room.id, sender_id=sender_user.id, content=content)
+
+
 def _persist_report_card_pdf(report_card):
     pdf_buffer = _render_report_card_pdf(report_card)
     student_slug = slugify(report_card.student.full_name) or f"student-{report_card.student_id}"
@@ -519,6 +541,7 @@ def reply_message(request):
         thread = ConversationThread.objects.filter(id=thread_id, teacher=teacher).first()
         if thread and content:
             Message.objects.create(thread=thread, sender=request.user, content=content)
+            _sync_thread_message_to_direct_room(thread, request.user, content)
             messages.success(request, "Reply sent.")
         else:
             messages.error(request, "Reply failed. Invalid thread or empty message.")

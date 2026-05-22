@@ -2,7 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:convert';
+// Import snitch screens
+import 'screens/snitch/snitch_dashboard.dart';
+import 'screens/snitch/snitch_assignments.dart';
+import 'screens/snitch/snitch_marks.dart';
+
+// Snitch feature flag: enable to surface prototype screens from Stitch
+const bool enableSnitch = true;
 
 String get apiBaseUrl {
   if (kIsWeb) {
@@ -24,8 +32,247 @@ class AppColors {
   static const success = Color(0xFF16A34A);
 }
 
+class DemoData {
+  static List<Map<String, dynamic>> students() {
+    return [
+      {
+        "id": 801,
+        "name": "Anika K P",
+        "class_id": 8,
+        "image": "",
+      },
+      {
+        "id": 802,
+        "name": "Vedhika Sai",
+        "class_id": 8,
+        "image": "",
+      },
+    ];
+  }
+
+  static List<Map<String, dynamic>> reportCards() {
+    return [
+      {
+        "id": -1,
+        "exam": "Mid Term",
+        "generated_on": "2026-03-28",
+        "pdf_file": "",
+        "is_demo": true,
+      },
+      {
+        "id": -2,
+        "exam": "Periodic Assessment 2",
+        "generated_on": "2026-01-15",
+        "pdf_file": "",
+        "is_demo": true,
+      },
+    ];
+  }
+
+  static List<Map<String, dynamic>> assignments() {
+    return [
+      {
+        "title": "Science - Water Cycle Model",
+        "due": "2026-04-29",
+        "status": "Pending",
+      },
+      {
+        "title": "Math - Algebra Worksheet",
+        "due": "2026-04-27",
+        "status": "Submitted",
+      },
+      {
+        "title": "English - Poem Recitation",
+        "due": "2026-05-02",
+        "status": "Pending",
+      },
+    ];
+  }
+
+  static List<Map<String, dynamic>> happenings() {
+    return [
+      {
+        "title": "PTA Meeting",
+        "date": "2026-04-30",
+        "description": "Discussion on student progress and term planning.",
+      },
+      {
+        "title": "Annual Sports Practice",
+        "date": "2026-05-04",
+        "description": "Track and field selections for classes 6-10.",
+      },
+      {
+        "title": "Art Exhibition",
+        "date": "2026-05-09",
+        "description": "Student artworks will be displayed in the main hall.",
+      },
+    ];
+  }
+
+  static List<Map<String, dynamic>> attendance() {
+    return [
+      {"date": "2026-04-24", "status": "PRESENT", "reason": ""},
+      {"date": "2026-04-23", "status": "PRESENT", "reason": ""},
+      {"date": "2026-04-22", "status": "ABSENT", "reason": "Fever"},
+      {"date": "2026-04-21", "status": "PRESENT", "reason": ""},
+    ];
+  }
+
+  static List<Map<String, dynamic>> marks() {
+    return [
+      {"subject": "English", "exam": "Periodic Assessment 1", "score": "88"},
+      {"subject": "Mathematics", "exam": "Periodic Assessment 1", "score": "92"},
+      {"subject": "Science", "exam": "Mid Term", "score": "85"},
+      {"subject": "Social", "exam": "End Term", "score": "90"},
+    ];
+  }
+
+  static List<Map<String, dynamic>> announcements() {
+    return [
+      {
+        "title": "School Reopens on Monday",
+        "body": "Students should report by 8:20 AM in complete uniform.",
+      },
+      {
+        "title": "Parent Portal Demo",
+        "body": "This app is currently showing demonstration content.",
+      },
+    ];
+  }
+
+  static List<Map<String, dynamic>> materials() {
+    return [
+      {"title": "Chapter 5 Notes", "subject": "Science", "file": "", "is_demo": true},
+      {"title": "Grammar Practice", "subject": "English", "file": "", "is_demo": true},
+      {"title": "Algebra Worksheet", "subject": "Mathematics", "file": "", "is_demo": true},
+    ];
+  }
+
+  static List<Map<String, dynamic>> feeInvoices() {
+    return [
+      {
+        "id": -101,
+        "title": "Tuition Fee - Apr 2026",
+        "due_date": "2026-04-28",
+        "total_amount": "3500.00",
+        "paid_amount": "1500.00",
+        "balance_amount": "2000.00",
+        "status": "PARTIAL",
+        "payments": [],
+        "is_demo": true,
+      },
+      {
+        "id": -102,
+        "title": "Transport Fee - Apr 2026",
+        "due_date": "2026-04-28",
+        "total_amount": "1200.00",
+        "paid_amount": "0.00",
+        "balance_amount": "1200.00",
+        "status": "PENDING",
+        "payments": [],
+        "is_demo": true,
+      },
+    ];
+  }
+
+  static List<Map<String, dynamic>> chats() {
+    return [
+      {
+        "room_id": -1,
+        "name": "Class 8-C Group",
+        "avatar_url": "",
+        "is_group": true,
+        "class_name": "8 C",
+        "member_names": ["Ms. Priya", "Mr. Arjun", "Dr Dipu K P"],
+        "last_message": "Tomorrow is project submission day.",
+      },
+      {
+        "room_id": -2,
+        "name": "Ms. Priya",
+        "avatar_url": "",
+        "is_group": false,
+        "class_name": "8 C",
+        "member_names": ["Ms. Priya"],
+        "last_message": "Anika improved in grammar this week.",
+      },
+      {
+        "room_id": -3,
+        "name": "Mr. Arjun",
+        "avatar_url": "",
+        "is_group": false,
+        "class_name": "8 C",
+        "member_names": ["Mr. Arjun"],
+        "last_message": "Please revise chapter 4 before Friday.",
+      },
+    ];
+  }
+
+  static List<Map<String, dynamic>> messages() {
+    return [
+      {
+        "id": -1,
+        "sender_id": 1,
+        "sender_name": "Ms. Priya",
+        "sender_avatar_url": "",
+        "content": "Good evening. Anika did very well in class today.",
+      },
+      {
+        "id": -2,
+        "sender_id": 999,
+        "sender_name": "You",
+        "sender_avatar_url": "",
+        "content": "Thank you for the update, ma'am.",
+      },
+      {
+        "id": -3,
+        "sender_id": 1,
+        "sender_name": "Ms. Priya",
+        "sender_avatar_url": "",
+        "content": "Please check the assignment list for this week.",
+      },
+    ];
+  }
+}
+
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  LocalAlertService.initialize();
   runApp(const ParentApp());
+}
+
+class LocalAlertService {
+  static final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
+
+  static Future<void> initialize() async {
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const ios = DarwinInitializationSettings();
+    const settings = InitializationSettings(android: android, iOS: ios);
+
+    await _plugin.initialize(settings);
+  }
+
+  static Future<void> showOverdueFeeAlert({
+    required int notificationId,
+    required String title,
+    required String body,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      'fee_alerts',
+      'Fee Alerts',
+      channelDescription: 'Overdue and due fee reminders',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+    const iosDetails = DarwinNotificationDetails();
+
+    await _plugin.show(
+      notificationId,
+      title,
+      body,
+      const NotificationDetails(android: androidDetails, iOS: iosDetails),
+    );
+  }
 }
 
 class ParentApp extends StatelessWidget {
@@ -33,9 +280,14 @@ class ParentApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       scrollBehavior: NoStretchScrollBehavior(),
+      routes: {
+        '/snitch/dashboard': (ctx) => const SnitchDashboard(),
+        '/snitch/assignments': (ctx) => const SnitchAssignments(),
+        '/snitch/marks': (ctx) => const SnitchMarks(),
+      },
       home: SplashScreen(),
     );
   }
@@ -164,11 +416,73 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
+  static const String _appLogoAsset = "assets/branding/app_logo.png";
+
+  late final AnimationController _controller;
+  late final AnimationController _ambientController;
+  late final Animation<double> _logoScale;
+  late final Animation<double> _contentFade;
+  late final Animation<Offset> _developerSlide;
+  late final Animation<double> _loadingPulse;
+  late final Animation<double> _orbFloat;
+  late final Animation<double> _lightSweep;
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 1400), () {
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1750),
+    )..forward();
+
+    _ambientController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    )..repeat(reverse: true);
+
+    _logoScale = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.55, curve: Curves.easeOutBack),
+    );
+
+    _contentFade = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.18, 0.90, curve: Curves.easeOutCubic),
+    );
+
+    _developerSlide = Tween<Offset>(
+      begin: const Offset(0, 0.22),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.38, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _loadingPulse = Tween<double>(begin: 0.7, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.52, 1.0, curve: Curves.easeInOut),
+      ),
+    );
+
+    _orbFloat = CurvedAnimation(
+      parent: _ambientController,
+      curve: Curves.easeInOut,
+    );
+
+    _lightSweep = Tween<double>(begin: -60, end: 60).animate(
+      CurvedAnimation(
+        parent: _ambientController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    Future.delayed(const Duration(milliseconds: 2500), () {
       if (!mounted) {
         return;
       }
@@ -181,61 +495,227 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    _ambientController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    AppColors.primary,
-                    AppColors.gradientEnd,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF9FBFF), Color(0xFFE8EEF9)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Positioned(
+                top: -120,
+                right: -60,
+                child: AnimatedBuilder(
+                  animation: _ambientController,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(0, 12 * _orbFloat.value),
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    width: 260,
+                    height: 260,
+                    decoration: BoxDecoration(
+                      color: AppColors.gradientEnd.withValues(alpha: 0.10),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(28),
               ),
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.school, color: Colors.white, size: 64),
-                  SizedBox(height: 16),
-                  Text(
-                    "School Platform",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
+              Positioned(
+                bottom: -140,
+                left: -70,
+                child: AnimatedBuilder(
+                  animation: _ambientController,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(0, -10 * _orbFloat.value),
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    width: 280,
+                    height: 280,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Parent App",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: 22),
-                  SizedBox(
-                    width: 26,
-                    height: 26,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.4,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 26),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ScaleTransition(
+                        scale: _logoScale,
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 104,
+                              height: 104,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x1A1E3A8A),
+                                    blurRadius: 20,
+                                    offset: Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Image.asset(
+                                  _appLogoAsset,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.school_rounded,
+                                      color: AppColors.primary,
+                                      size: 54,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(30),
+                                  child: AnimatedBuilder(
+                                    animation: _ambientController,
+                                    builder: (context, child) {
+                                      return Transform.translate(
+                                        offset: Offset(_lightSweep.value, 0),
+                                        child: child,
+                                      );
+                                    },
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Container(
+                                        width: 36,
+                                        decoration: const BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Color(0x00FFFFFF),
+                                              Color(0x52FFFFFF),
+                                              Color(0x00FFFFFF),
+                                            ],
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      FadeTransition(
+                        opacity: _contentFade,
+                        child: const Text(
+                          "School Platform",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF111827),
+                            letterSpacing: 0.25,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SlideTransition(
+                        position: _developerSlide,
+                        child: FadeTransition(
+                          opacity: _contentFade,
+                          child: const Text(
+                            "Developed by Quadelt",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF6B7280),
+                              letterSpacing: 0.15,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 34),
+                      AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) {
+                          final strength =
+                              (_controller.value * 2.6) % 1.0;
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(3, (index) {
+                              final adjusted =
+                                  (strength - (index * 0.17)).clamp(0.0, 1.0);
+                              final scale =
+                                  _loadingPulse.value + (adjusted * 0.33);
+
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 6),
+                                child: Transform.scale(
+                                  scale: scale,
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.45 + (adjusted * 0.45),
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      FadeTransition(
+                        opacity: _contentFade,
+                        child: const Text(
+                          "Preparing your workspace",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -514,12 +994,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool hasMultipleChildren = false;
   String attendancePercent = "-";
   String marksAverage = "-";
+  String pendingFees = "Rs 0";
+  int dueSoonFeesCount = 0;
+  int overdueFeesCount = 0;
+  int unreadFeeNotificationCount = 0;
+  int? lastLocalAlertNotificationId;
 
   @override
   void initState() {
     super.initState();
     checkMultipleChildren();
     fetchDashboardStats();
+    fetchUnreadFeeNotificationCount();
+  }
+
+  Future<void> fetchUnreadFeeNotificationCount() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          "$apiBaseUrl/api/parent/${widget.parentId}/fee-notifications/unread-count/",
+        ),
+      );
+
+      if (!mounted || response.statusCode != 200) {
+        return;
+      }
+
+      final data = json.decode(response.body);
+      if (data is Map) {
+        setState(() {
+          unreadFeeNotificationCount =
+              int.tryParse((data['unread_count'] ?? 0).toString()) ?? 0;
+        });
+
+        if (unreadFeeNotificationCount > 0) {
+          notifyLatestOverdueFeeIfNeeded();
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> notifyLatestOverdueFeeIfNeeded() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiBaseUrl/api/parent/${widget.parentId}/fee-notifications/"),
+      );
+
+      if (response.statusCode != 200) {
+        return;
+      }
+
+      final payload = json.decode(response.body);
+      if (payload is! List) {
+        return;
+      }
+
+      for (final item in payload) {
+        if (item is! Map) {
+          continue;
+        }
+
+        final type = (item['notification_type'] ?? '').toString();
+        final isRead = item['is_read'] == true;
+        final id = int.tryParse((item['id'] ?? '').toString());
+
+        if (type == 'OVERDUE' && !isRead && id != null) {
+          if (lastLocalAlertNotificationId == id) {
+            return;
+          }
+
+          lastLocalAlertNotificationId = id;
+          await LocalAlertService.showOverdueFeeAlert(
+            notificationId: id,
+            title: (item['title'] ?? 'Fee Overdue').toString(),
+            body: (item['body'] ?? 'Pending fee payment').toString(),
+          );
+          return;
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> checkMultipleChildren() async {
@@ -553,12 +1106,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Uri.parse("$apiBaseUrl/api/student/${widget.studentId}/marks/"),
       );
 
+      final feeSummaryResponse = await http.get(
+        Uri.parse("$apiBaseUrl/api/student/${widget.studentId}/fees/summary/"),
+      );
+
       if (!mounted) {
         return;
       }
 
       double? computedAttendance;
       double? computedMarksAvg;
+      String computedPendingFees = "Rs 0";
+      int computedDueSoon = 0;
+      int computedOverdue = 0;
 
       if (attendanceResponse.statusCode == 200) {
         final attendanceData = json.decode(attendanceResponse.body);
@@ -591,15 +1151,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
 
+      if (feeSummaryResponse.statusCode == 200) {
+        final feeSummaryData = json.decode(feeSummaryResponse.body);
+        if (feeSummaryData is Map) {
+          final pendingTotal = double.tryParse(
+            (feeSummaryData['pending_total'] ?? '0').toString(),
+          );
+          computedPendingFees = "Rs ${(pendingTotal ?? 0).toStringAsFixed(0)}";
+          computedDueSoon = int.tryParse(
+                (feeSummaryData['due_soon_count'] ?? 0).toString(),
+              ) ??
+              0;
+          computedOverdue = int.tryParse(
+                (feeSummaryData['overdue_count'] ?? 0).toString(),
+              ) ??
+              0;
+        }
+      }
+
       setState(() {
         attendancePercent = computedAttendance == null
             ? "-"
             : "${computedAttendance.toStringAsFixed(0)}%";
         marksAverage = computedMarksAvg == null
             ? "-"
-          : computedMarksAvg.toStringAsFixed(1);
+            : computedMarksAvg.toStringAsFixed(1);
+        pendingFees = computedPendingFees;
+        dueSoonFeesCount = computedDueSoon;
+        overdueFeesCount = computedOverdue;
       });
     } catch (_) {}
+  }
+
+  Future<void> openFeesAndRefresh() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FeePaymentScreen(
+          studentId: widget.studentId,
+          studentName: widget.studentName,
+        ),
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    fetchDashboardStats();
+    fetchUnreadFeeNotificationCount();
   }
 
   @override
@@ -619,6 +1219,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const PoweredByQuadeltFooter(),
             ],
           ),
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: AppColors.primary),
+              child: Text('Parent App', style: TextStyle(color: Colors.white, fontSize: 20)),
+            ),
+            if (enableSnitch)
+              ListTile(
+                leading: const Icon(Icons.bubble_chart),
+                title: const Text('Snitch Prototype'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pushNamed('/snitch/dashboard');
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: buildBottomNav(context),
@@ -650,22 +1277,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MessagesScreen(
-                          userId: widget.userId,
-                          parentId: widget.parentId,
-                          studentId: widget.studentId,
-                          studentName: widget.studentName,
-                          studentImage: widget.studentImage,
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.message, color: Colors.white),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        Scaffold.of(context).openDrawer();
+                      },
+                      icon: const Icon(Icons.menu, color: Colors.white),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MessagesScreen(
+                              userId: widget.userId,
+                              parentId: widget.parentId,
+                              studentId: widget.studentId,
+                              studentName: widget.studentName,
+                              studentImage: widget.studentImage,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.message, color: Colors.white),
+                    ),
+                  ],
                 ),
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -687,15 +1324,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         icon: const Icon(Icons.switch_account, color: Colors.white),
                       ),
                     IconButton(
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const NotificationScreen(),
+                            builder: (_) => NotificationScreen(
+                              parentId: widget.parentId,
+                            ),
                           ),
                         );
+
+                        if (mounted) {
+                          fetchUnreadFeeNotificationCount();
+                        }
                       },
-                      icon: const Icon(Icons.notifications, color: Colors.white),
+                      icon: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.notifications, color: Colors.white),
+                          if (unreadFeeNotificationCount > 0)
+                            Positioned(
+                              right: -2,
+                              top: -2,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.redAccent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  unreadFeeNotificationCount > 99
+                                      ? "99+"
+                                      : unreadFeeNotificationCount.toString(),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                     IconButton(
                       tooltip: "Logout",
@@ -792,40 +1470,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget buildStatsRow() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
         children: [
-          buildMiniCard(
-            "Attendance",
-            attendancePercent,
-            AppColors.success,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AttendanceScreen(
-                    studentId: widget.studentId,
-                    studentName: widget.studentName,
-                  ),
-                ),
-              );
-            },
+          Row(
+            children: [
+              buildMiniCard(
+                "Attendance",
+                attendancePercent,
+                AppColors.success,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AttendanceScreen(
+                        studentId: widget.studentId,
+                        studentName: widget.studentName,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              buildMiniCard(
+                "Marks Avg",
+                marksAverage,
+                AppColors.primary,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MarksScreen(
+                        studentId: widget.studentId,
+                        studentName: widget.studentName,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
-          buildMiniCard(
-            "Marks Avg",
-            marksAverage,
-            AppColors.primary,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => MarksScreen(
-                    studentId: widget.studentId,
-                    studentName: widget.studentName,
-                  ),
-                ),
-              );
-            },
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              buildMiniCard(
+                overdueFeesCount > 0 ? "Fees Overdue" : "Pending Fees",
+                pendingFees,
+                overdueFeesCount > 0 ? Colors.redAccent : AppColors.badge,
+                subtitle: overdueFeesCount > 0
+                    ? "$overdueFeesCount overdue"
+                    : dueSoonFeesCount > 0
+                        ? "$dueSoonFeesCount due soon"
+                        : null,
+                onTap: openFeesAndRefresh,
+              ),
+              const Spacer(),
+            ],
           ),
         ],
       ),
@@ -837,6 +1535,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     String value,
     Color color, {
     VoidCallback? onTap,
+    String? subtitle,
   }) {
     return Expanded(
       child: InkWell(
@@ -868,6 +1567,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 5),
               Text(title),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Colors.black54,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -889,7 +1598,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             context,
             Icons.assignment,
             "Assignments",
-            const AssignmentsScreen(),
+            enableSnitch
+                ? const SnitchAssignments()
+                : AssignmentsScreen(
+                    studentId: widget.studentId,
+                    studentName: widget.studentName,
+                  ),
           ),
           buildCard(
             context,
@@ -924,9 +1638,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           buildCard(
             context,
+            Icons.account_balance_wallet,
+            "Fees",
+            FeePaymentScreen(
+              studentId: widget.studentId,
+              studentName: widget.studentName,
+            ),
+            onReturn: () {
+              fetchDashboardStats();
+              fetchUnreadFeeNotificationCount();
+            },
+          ),
+          buildCard(
+            context,
             Icons.bar_chart,
             "Marks",
-            MarksScreen(studentId: widget.studentId, studentName: widget.studentName),
+            enableSnitch
+                ? const SnitchMarks()
+                : MarksScreen(studentId: widget.studentId, studentName: widget.studentName),
           ),
         ],
       ),
@@ -937,15 +1666,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     BuildContext context,
     IconData icon,
     String title,
-    Widget screen,
-  ) {
+    Widget screen, {
+    VoidCallback? onReturn,
+  }) {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => screen),
         );
+        onReturn?.call();
       },
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -1183,8 +1914,93 @@ class _ReportCardScreenState extends State<ReportCardScreen> {
   }
 }
 
-class AssignmentsScreen extends StatelessWidget {
-  const AssignmentsScreen({super.key});
+class AssignmentsScreen extends StatefulWidget {
+  final int studentId;
+  final String studentName;
+
+  const AssignmentsScreen({
+    super.key,
+    required this.studentId,
+    required this.studentName,
+  });
+
+  @override
+  State<AssignmentsScreen> createState() => _AssignmentsScreenState();
+}
+
+class _AssignmentsScreenState extends State<AssignmentsScreen> {
+  List assignments = [];
+  bool isLoading = true;
+  bool isUsingSampleData = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAssignments();
+  }
+
+  Future<void> fetchAssignments() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiBaseUrl/api/student/${widget.studentId}/assignments/"),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        if (decoded is List && decoded.isNotEmpty) {
+          setState(() {
+            assignments = decoded;
+            isLoading = false;
+            isUsingSampleData = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {}
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      assignments = DemoData.assignments();
+      isLoading = false;
+      isUsingSampleData = true;
+    });
+  }
+
+  Color statusColor(String status) {
+    final normalized = status.toUpperCase();
+    if (normalized == "SUBMITTED") {
+      return AppColors.success;
+    }
+    if (normalized == "OVERDUE") {
+      return Colors.redAccent;
+    }
+    return AppColors.badge;
+  }
+
+  String statusLabel(String status) {
+    final normalized = status.toUpperCase();
+    switch (normalized) {
+      case "SUBMITTED":
+        return "Submitted";
+      case "OVERDUE":
+        return "Overdue";
+      default:
+        return "Pending";
+    }
+  }
+
+  String dueText(Map item) {
+    final due = item['due_date'] ?? item['due'] ?? '';
+    final dueString = due.toString();
+    return dueString.isEmpty ? 'No due date' : 'Due $dueString';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1193,21 +2009,137 @@ class AssignmentsScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const AppSectionHeader(
+            AppSectionHeader(
               icon: Icons.assignment,
               title: "Assignments",
+              subtitle: widget.studentName,
             ),
-            const Expanded(
-              child: Center(
-                child: Text(
-                  "Coming soon",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w500,
-                  ),
+            if (isUsingSampleData)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: const Text(
+                  "Showing demo assignments",
+                  style: TextStyle(fontSize: 12, color: Colors.black87),
                 ),
               ),
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : assignments.isEmpty
+                  ? const Center(
+                      child: Text(
+                        "No assignments available",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: assignments.length,
+                      itemBuilder: (context, index) {
+                        final item = assignments[index] as Map;
+                        final title = (item['title'] ?? 'Assignment').toString();
+                        final description = (item['description'] ?? '').toString();
+                        final subject = (item['subject'] ?? '').toString();
+                        final status = (item['status'] ?? 'PENDING').toString();
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          color: AppColors.card,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        title,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: statusColor(status).withAlpha(26),
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: Text(
+                                        statusLabel(status),
+                                        style: TextStyle(
+                                          color: statusColor(status),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (subject.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    subject,
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                                if (description.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    description,
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.event,
+                                      size: 16,
+                                      color: Colors.black54,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      dueText(item.cast<String, dynamic>()),
+                                      style: const TextStyle(
+                                        color: Colors.black54,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -1869,6 +2801,26 @@ class MarksScreen extends StatefulWidget {
 
 class _MarksScreenState extends State<MarksScreen> {
   List marks = [];
+  String? selectedExam;
+
+  List<String> get availableExams {
+    final examNames = marks
+        .map((item) => (item['exam'] ?? '').toString())
+        .where((name) => name.isNotEmpty)
+        .toSet()
+        .toList();
+    examNames.sort();
+    return examNames;
+  }
+
+  List get filteredMarks {
+    if (selectedExam == null || selectedExam!.isEmpty) {
+      return marks;
+    }
+    return marks
+        .where((item) => (item['exam'] ?? '').toString() == selectedExam)
+        .toList();
+  }
 
   @override
   void initState() {
@@ -1886,6 +2838,10 @@ class _MarksScreenState extends State<MarksScreen> {
     if (response.statusCode == 200) {
       setState(() {
         marks = json.decode(response.body);
+        final exams = availableExams;
+        if (exams.isNotEmpty) {
+          selectedExam = exams.first;
+        }
       });
     }
   }
@@ -1914,50 +2870,86 @@ class _MarksScreenState extends State<MarksScreen> {
                         ),
                       ),
                     )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: marks.length,
-                      itemBuilder: (context, index) {
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 14),
-                          color: AppColors.card,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            leading: Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withAlpha(26),
+                  : Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          child: DropdownButtonFormField<String>(
+                            initialValue: selectedExam,
+                            decoration: InputDecoration(
+                              labelText: "Select Test",
+                              filled: true,
+                              fillColor: AppColors.card,
+                              border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.assessment,
-                                color: AppColors.primary,
+                                borderSide: BorderSide.none,
                               ),
                             ),
-                            title: Text(
-                              marks[index]['subject'],
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: Text(marks[index]['exam']),
-                            trailing: Text(
-                              marks[index]['score'].toString(),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                            ),
+                            items: availableExams
+                                .map(
+                                  (exam) => DropdownMenuItem<String>(
+                                    value: exam,
+                                    child: Text(exam),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                selectedExam = value;
+                              });
+                            },
                           ),
-                        );
-                      },
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(20),
+                            itemCount: filteredMarks.length,
+                            itemBuilder: (context, index) {
+                              final item = filteredMarks[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 14),
+                                color: AppColors.card,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  leading: Container(
+                                    width: 42,
+                                    height: 42,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withAlpha(26),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.assessment,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    (item['subject'] ?? '').toString(),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  subtitle: Text((item['exam'] ?? '').toString()),
+                                  trailing: Text(
+                                    (item['score'] ?? '').toString(),
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
             ),
           ],
@@ -1968,7 +2960,12 @@ class _MarksScreenState extends State<MarksScreen> {
 }
 
 class NotificationScreen extends StatefulWidget {
-  const NotificationScreen({super.key});
+  final int parentId;
+
+  const NotificationScreen({
+    super.key,
+    required this.parentId,
+  });
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -1976,6 +2973,7 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   List notifications = [];
+  String selectedFilter = "ALL";
 
   @override
   void initState() {
@@ -1983,14 +2981,130 @@ class _NotificationScreenState extends State<NotificationScreen> {
     fetchNotifications();
   }
 
-  Future<void> fetchNotifications() async {
-    final response = await http.get(
-      Uri.parse("$apiBaseUrl/api/announcements/"),
-    );
+  List<Map<String, dynamic>> get filteredNotifications {
+    final all = notifications.cast<Map<String, dynamic>>();
 
-    if (response.statusCode == 200) {
+    if (selectedFilter == "UNREAD") {
+      return all.where((item) => item['is_read'] != true).toList();
+    }
+
+    if (selectedFilter == "FEES") {
+      return all.where((item) {
+        final type = (item['type'] ?? '').toString();
+        return type == 'OVERDUE' || type == 'DUE_SOON';
+      }).toList();
+    }
+
+    if (selectedFilter == "ANNOUNCEMENTS") {
+      return all.where((item) => (item['type'] ?? '').toString() == 'ANNOUNCEMENT').toList();
+    }
+
+    return all;
+  }
+
+  Future<void> markNotificationAsRead(int notificationId) async {
+    try {
+      await http.post(
+        Uri.parse(
+          "$apiBaseUrl/api/parent/${widget.parentId}/fee-notifications/mark-read/",
+        ),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({"notification_id": notificationId}),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> markAllFeeNotificationsAsRead() async {
+    try {
+      await http.post(
+        Uri.parse(
+          "$apiBaseUrl/api/parent/${widget.parentId}/fee-notifications/mark-read/",
+        ),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({}),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
       setState(() {
-        notifications = json.decode(response.body);
+        notifications = notifications.map((item) {
+          final note = Map<String, dynamic>.from(item as Map);
+          final type = (note['type'] ?? '').toString();
+          if (type == 'OVERDUE' || type == 'DUE_SOON') {
+            note['is_read'] = true;
+          }
+          return note;
+        }).toList();
+      });
+    } catch (_) {}
+  }
+
+  Future<void> fetchNotifications() async {
+    try {
+      final announcementsResponse = await http.get(
+        Uri.parse("$apiBaseUrl/api/announcements/"),
+      );
+
+      final remindersResponse = await http.get(
+        Uri.parse("$apiBaseUrl/api/parent/${widget.parentId}/fee-notifications/"),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final merged = <Map<String, dynamic>>[];
+
+      if (remindersResponse.statusCode == 200) {
+        final remindersData = json.decode(remindersResponse.body);
+        if (remindersData is List) {
+          for (final item in remindersData) {
+            if (item is Map) {
+              merged.add({
+                "id": int.tryParse((item["id"] ?? '').toString()) ?? 0,
+                "title": (item["title"] ?? "Fee Reminder").toString(),
+                "body": (item["body"] ?? "Pending fee payment").toString(),
+                "type": (item["notification_type"] ?? "DUE_SOON").toString(),
+                "is_read": item["is_read"] == true,
+                "student_id": int.tryParse((item["student"] ?? '').toString()) ?? 0,
+                "student_name": (item["student_name"] ?? "Student").toString(),
+              });
+            }
+          }
+        }
+      }
+
+      if (announcementsResponse.statusCode == 200) {
+        final announcementsData = json.decode(announcementsResponse.body);
+        if (announcementsData is List) {
+          for (final item in announcementsData) {
+            if (item is Map) {
+              merged.add({
+                "id": 0,
+                "title": (item["title"] ?? "Announcement").toString(),
+                "body": (item["body"] ?? "").toString(),
+                "type": "ANNOUNCEMENT",
+                "is_read": true,
+                "student_id": 0,
+                "student_name": "",
+              });
+            }
+          }
+        }
+      }
+
+      setState(() {
+        notifications = merged;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        notifications = [];
       });
     }
   }
@@ -2006,8 +3120,50 @@ class _NotificationScreenState extends State<NotificationScreen> {
               icon: Icons.notifications,
               title: "Notifications",
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildFilterChip("ALL", "All"),
+                          const SizedBox(width: 8),
+                          _buildFilterChip("UNREAD", "Unread"),
+                          const SizedBox(width: 8),
+                          _buildFilterChip("FEES", "Fees"),
+                          const SizedBox(width: 8),
+                          _buildFilterChip("ANNOUNCEMENTS", "Announcements"),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (notifications.any((item) {
+              final note = item as Map;
+              final type = (note['type'] ?? '').toString();
+              return (type == 'OVERDUE' || type == 'DUE_SOON') && note['is_read'] != true;
+            }))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: markAllFeeNotificationsAsRead,
+                    icon: const Icon(Icons.done_all, size: 18),
+                    label: const Text("Mark all fee alerts as read"),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ),
             Expanded(
-              child: notifications.isEmpty
+              child: filteredNotifications.isEmpty
                   ? const Center(
                       child: Text(
                         "No notifications available",
@@ -2020,8 +3176,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      itemCount: notifications.length,
+                      itemCount: filteredNotifications.length,
                       itemBuilder: (context, index) {
+                        final note = filteredNotifications[index];
+                        final type = (note['type'] ?? 'ANNOUNCEMENT').toString();
+                        final isOverdue = type == 'OVERDUE';
+                        final isFeeReminder = type == 'OVERDUE' || type == 'DUE_SOON';
+                        final isRead = note['is_read'] == true;
+                        final notificationId = note['id'] as int?;
+                        final studentId = (note['student_id'] as int?) ?? 0;
+                        final studentName = (note['student_name'] ?? 'Student').toString();
+
                         return Card(
                           margin: const EdgeInsets.only(bottom: 14),
                           color: AppColors.card,
@@ -2037,20 +3202,60 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               width: 42,
                               height: 42,
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withAlpha(26),
+                                color: isFeeReminder
+                                    ? (isOverdue
+                                        ? Colors.redAccent.withValues(alpha: 0.14)
+                                        : AppColors.badge.withValues(alpha: 0.18))
+                                    : AppColors.primary.withAlpha(26),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(
-                                Icons.campaign,
-                                color: AppColors.primary,
+                              child: Icon(
+                                isFeeReminder
+                                    ? Icons.account_balance_wallet
+                                    : Icons.campaign,
+                                color: isFeeReminder
+                                    ? (isOverdue ? Colors.redAccent : const Color(0xFF92400E))
+                                    : AppColors.primary,
                               ),
                             ),
                             title: Text(
-                              notifications[index]['title'],
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600),
+                              note['title'].toString(),
+                              style: TextStyle(
+                                fontWeight:
+                                    isRead ? FontWeight.w500 : FontWeight.w700,
+                              ),
                             ),
-                            subtitle: Text(notifications[index]['body']),
+                            subtitle: Text(note['body'].toString()),
+                            onTap: () async {
+                              final navigator = Navigator.of(context);
+
+                              if (!isFeeReminder) {
+                                return;
+                              }
+
+                              if (!isRead && notificationId != null && notificationId > 0) {
+                                await markNotificationAsRead(notificationId);
+                              }
+
+                              if (!mounted) {
+                                return;
+                              }
+
+                              setState(() {
+                                note['is_read'] = true;
+                              });
+
+                              if (studentId > 0) {
+                                await navigator.push(
+                                  MaterialPageRoute(
+                                    builder: (_) => FeePaymentScreen(
+                                      studentId: studentId,
+                                      studentName: studentName,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
                           ),
                         );
                       },
@@ -2059,6 +3264,30 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFilterChip(String key, String label) {
+    final selected = selectedFilter == key;
+
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) {
+        setState(() {
+          selectedFilter = key;
+        });
+      },
+      selectedColor: AppColors.primary.withValues(alpha: 0.18),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : Colors.black87,
+        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+      ),
+      side: BorderSide(
+        color: selected ? AppColors.primary : Colors.black12,
+      ),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
     );
   }
 }
@@ -2168,6 +3397,371 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                 debugPrint("Could not launch $url");
                               }
                             },
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class FeePaymentScreen extends StatefulWidget {
+  final int studentId;
+  final String studentName;
+
+  const FeePaymentScreen({
+    super.key,
+    required this.studentId,
+    required this.studentName,
+  });
+
+  @override
+  State<FeePaymentScreen> createState() => _FeePaymentScreenState();
+}
+
+class _FeePaymentScreenState extends State<FeePaymentScreen> {
+  List invoices = [];
+  bool isLoading = true;
+  final Set<int> payingInvoiceIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    fetchInvoices();
+  }
+
+  Future<void> fetchInvoices() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiBaseUrl/api/student/${widget.studentId}/fees/"),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (response.statusCode == 200) {
+        setState(() {
+          invoices = json.decode(response.body);
+          isLoading = false;
+        });
+        return;
+      }
+
+      setState(() {
+        invoices = [];
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unable to load fee invoices")),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        invoices = [];
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cannot connect to server")),
+      );
+    }
+  }
+
+  Future<void> payNow(Map invoice) async {
+    final invoiceId = invoice['id'];
+    final balance = double.tryParse(invoice['balance_amount'].toString()) ?? 0;
+
+    if (invoiceId is! int || balance <= 0) {
+      return;
+    }
+
+    setState(() {
+      payingInvoiceIds.add(invoiceId);
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(
+          "$apiBaseUrl/api/student/${widget.studentId}/fees/$invoiceId/pay/",
+        ),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "amount": balance.toStringAsFixed(2),
+          "payment_method": "UPI",
+        }),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (response.statusCode == 200) {
+        final updatedInvoice = json.decode(response.body);
+        setState(() {
+          invoices = invoices.map((item) {
+            if (item['id'] == invoiceId) {
+              return updatedInvoice;
+            }
+            return item;
+          }).toList();
+        });
+
+        int? latestPaymentId;
+        final payments = updatedInvoice['payments'];
+        if (payments is List && payments.isNotEmpty) {
+          final latestPayment = payments.first;
+          if (latestPayment is Map) {
+            latestPaymentId = int.tryParse(
+              (latestPayment['id'] ?? '').toString(),
+            );
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Fee payment successful")),
+        );
+
+        if (latestPaymentId != null) {
+          await showDialog<void>(
+            context: context,
+            builder: (dialogContext) {
+              return AlertDialog(
+                title: const Text("Payment Receipt"),
+                content: const Text(
+                  "Payment recorded successfully. Do you want to view the receipt now?",
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                    },
+                    child: const Text("Later"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      openReceipt(latestPaymentId!);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text("View Receipt"),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+
+        return;
+      }
+
+      String errorMessage = "Unable to process payment";
+      try {
+        final payload = json.decode(response.body);
+        if (payload is Map && payload['detail'] != null) {
+          errorMessage = payload['detail'].toString();
+        }
+      } catch (_) {}
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cannot connect to server")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          payingInvoiceIds.remove(invoiceId);
+        });
+      }
+    }
+  }
+
+  Future<void> openReceipt(int paymentId) async {
+    final receiptUrl =
+        "$apiBaseUrl/api/student/${widget.studentId}/fees/payments/$paymentId/receipt/";
+
+    final launched = await launchUrl(
+      Uri.parse(receiptUrl),
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Could not open receipt")),
+      );
+    }
+  }
+
+  Color statusColor(String status) {
+    switch (status) {
+      case "PAID":
+        return AppColors.success;
+      case "PARTIAL":
+        return AppColors.badge;
+      default:
+        return Colors.redAccent;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF3F4F6),
+      body: SafeArea(
+        child: Column(
+          children: [
+            AppSectionHeader(
+              icon: Icons.account_balance_wallet,
+              title: "Fees",
+              subtitle: widget.studentName,
+            ),
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : invoices.isEmpty
+                  ? const Center(
+                      child: Text(
+                        "No fee invoices available",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: invoices.length,
+                      itemBuilder: (context, index) {
+                        final invoice = invoices[index] as Map;
+                        final invoiceId = invoice['id'];
+                        final isPaying =
+                            invoiceId is int && payingInvoiceIds.contains(invoiceId);
+
+                        final total =
+                            double.tryParse(invoice['total_amount'].toString()) ?? 0;
+                        final paid =
+                            double.tryParse(invoice['paid_amount'].toString()) ?? 0;
+                        final balance =
+                            double.tryParse(invoice['balance_amount'].toString()) ?? 0;
+                        final status = (invoice['status'] ?? 'PENDING').toString();
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          color: AppColors.card,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        (invoice['title'] ?? 'Fee Invoice').toString(),
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: statusColor(status).withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: Text(
+                                        status,
+                                        style: TextStyle(
+                                          color: statusColor(status),
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  "Due: ${(invoice['due_date'] ?? '').toString()}",
+                                  style: const TextStyle(color: Colors.black54),
+                                ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Expanded(child: Text("Total: Rs ${total.toStringAsFixed(2)}")),
+                                    Expanded(
+                                      child: Text(
+                                        "Paid: Rs ${paid.toStringAsFixed(2)}",
+                                        textAlign: TextAlign.end,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Pending: Rs ${balance.toStringAsFixed(2)}",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                if (balance > 0)
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: isPaying
+                                          ? null
+                                          : () => payNow(invoice),
+                                      icon: isPaying
+                                          ? const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : const Icon(Icons.payments),
+                                      label: Text(
+                                        isPaying
+                                            ? "Processing..."
+                                            : "Pay Pending Amount",
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -2382,6 +3976,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                             ?.map((e) => e.toString())
                             .toList() ??
                           <String>[];
+                        final avatarUrl = (chat['avatar_url'] ?? '').toString();
                         final lastMessage = chat['last_message'] ?? '';
                         final roomId = chat['room_id'];
 
@@ -2413,12 +4008,31 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                     : AppColors.primary.withAlpha(26),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(
-                                isGroup ? Icons.groups : Icons.support_agent,
-                                color: isGroup
-                                    ? const Color(0xFF92400E)
-                                    : AppColors.primary,
-                              ),
+                              child: isGroup
+                                  ? const Icon(
+                                      Icons.groups,
+                                      color: Color(0xFF92400E),
+                                    )
+                                  : (avatarUrl.isNotEmpty
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Image.network(
+                                            avatarUrl,
+                                            width: 42,
+                                            height: 42,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return const Icon(
+                                                Icons.support_agent,
+                                                color: AppColors.primary,
+                                              );
+                                            },
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.support_agent,
+                                          color: AppColors.primary,
+                                        )),
                             ),
                             title: Text(
                               roomName,
@@ -2643,43 +4257,85 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                             final message = messages[index];
                             final isCurrentUser =
                                 message['sender_id'] == widget.userId;
+                            final senderAvatarUrl =
+                                (message['sender_avatar_url'] ?? '').toString();
                             return Align(
                               alignment: isCurrentUser
                                   ? Alignment.centerRight
                                   : Alignment.centerLeft,
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 10),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                constraints: const BoxConstraints(maxWidth: 280),
-                                decoration: BoxDecoration(
-                                  color: isCurrentUser
-                                      ? AppColors.primary
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text(
-                                      message['sender_name'] ?? '',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: isCurrentUser
-                                            ? Colors.white70
-                                            : Colors.black54,
-                                        fontWeight: FontWeight.w600,
+                                    if (!isCurrentUser)
+                                      Container(
+                                        width: 28,
+                                        height: 28,
+                                        margin: const EdgeInsets.only(right: 8),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withAlpha(26),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: senderAvatarUrl.isNotEmpty
+                                            ? ClipRRect(
+                                                borderRadius: BorderRadius.circular(8),
+                                                child: Image.network(
+                                                  senderAvatarUrl,
+                                                  width: 28,
+                                                  height: 28,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return const Icon(
+                                                      Icons.person,
+                                                      size: 16,
+                                                      color: AppColors.primary,
+                                                    );
+                                                  },
+                                                ),
+                                              )
+                                            : const Icon(
+                                                Icons.person,
+                                                size: 16,
+                                                color: AppColors.primary,
+                                              ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      message['content'] ?? '',
-                                      style: TextStyle(
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
+                                      constraints: const BoxConstraints(maxWidth: 280),
+                                      decoration: BoxDecoration(
                                         color: isCurrentUser
-                                            ? Colors.white
-                                            : Colors.black87,
+                                            ? AppColors.primary
+                                            : Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            message['sender_name'] ?? '',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: isCurrentUser
+                                                  ? Colors.white70
+                                                  : Colors.black54,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            message['content'] ?? '',
+                                            style: TextStyle(
+                                              color: isCurrentUser
+                                                  ? Colors.white
+                                                  : Colors.black87,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],

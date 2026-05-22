@@ -216,6 +216,51 @@ def _display_name_for_user(user):
     return user.username
 
 
+def _avatar_url_for_user(request, user):
+    teacher = TeacherProfile.objects.filter(user_id=user.id).first()
+    if teacher and teacher.photo:
+        try:
+            return request.build_absolute_uri(teacher.photo.url)
+        except ValueError:
+            return ""
+    return ""
+
+
+def _sync_direct_room_message_to_thread(room, sender_id, content):
+    if room.is_group or not room.student_id or not room.direct_teacher_id:
+        return
+
+    parent_user_id = (
+        ChatRoomMember.objects.filter(room_id=room.id)
+        .filter(user__parentprofile__isnull=False)
+        .values_list("user_id", flat=True)
+        .first()
+    )
+    if not parent_user_id:
+        return
+
+    parent_profile = ParentProfile.objects.filter(user_id=parent_user_id).first()
+    if not parent_profile:
+        return
+
+    thread, _ = ConversationThread.objects.get_or_create(
+        student_id=room.student_id,
+        parent_id=parent_profile.id,
+        teacher_id=room.direct_teacher_id,
+    )
+
+    # Avoid duplicate mirror rows when the same user sends identical latest content.
+    latest = thread.messages.order_by("-timestamp").first()
+    if latest and latest.sender_id == sender_id and latest.content == content:
+        return
+
+    Message.objects.create(
+        thread_id=thread.id,
+        sender_id=sender_id,
+        content=content,
+    )
+
+
 @api_view(["GET"])
 def chat_rooms_v2(request):
     user_id = request.query_params.get("user_id")
@@ -341,11 +386,15 @@ def chat_rooms_v2(request):
         title = room.name
         if not room.is_group and other_members:
             title = _display_name_for_user(other_members[0])
+        avatar_url = "" if room.is_group else (
+            _avatar_url_for_user(request, other_members[0]) if other_members else ""
+        )
 
         last_message = room.messages.order_by("-created_at").first()
         payload.append({
             "room_id": room.id,
             "name": title,
+            "avatar_url": avatar_url,
             "is_group": room.is_group,
             "student_id": room.student_id,
             "class_name": str(room.class_section) if room.class_section else "",
@@ -393,6 +442,7 @@ def chat_room_messages_v2(request, room_id):
                 "room_id": room.id,
                 "sender_id": msg.sender_id,
                 "sender_name": _display_name_for_user(msg.sender),
+                "sender_avatar_url": _avatar_url_for_user(request, msg.sender),
                 "content": msg.content,
                 "created_at": msg.created_at,
             }
@@ -413,6 +463,9 @@ def chat_room_messages_v2(request, room_id):
         sender_id=user_id_int,
         content=content,
     )
+
+    _sync_direct_room_message_to_thread(room, user_id_int, content)
+
     room.save(update_fields=["updated_at"])
 
     serializer = ChatRoomMessageSerializer(
@@ -421,6 +474,7 @@ def chat_room_messages_v2(request, room_id):
             "room_id": room.id,
             "sender_id": message.sender_id,
             "sender_name": _display_name_for_user(message.sender),
+            "sender_avatar_url": _avatar_url_for_user(request, message.sender),
             "content": message.content,
             "created_at": message.created_at,
         }
