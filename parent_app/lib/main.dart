@@ -1,239 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'dart:convert';
-// Import snitch screens
+// Snitch prototype screens
 import 'screens/snitch/snitch_dashboard.dart';
 import 'screens/snitch/snitch_assignments.dart';
 import 'screens/snitch/snitch_marks.dart';
 import 'screens/snitch/snitch_login.dart';
-
-// Snitch feature flag: enable to surface prototype screens from Stitch
-const bool enableSnitch = true;
-
-String get apiBaseUrl {
-  if (kIsWeb) {
-    return "http://127.0.0.1:8000";
-  }
-
-  if (defaultTargetPlatform == TargetPlatform.android) {
-    return "http://10.0.2.2:8000";
-  }
-
-  return "http://127.0.0.1:8000";
-}
-
-class AppColors {
-  static const primary = Color(0xFF1E3A8A);
-  static const gradientEnd = Color(0xFF2563EB);
-  static const card = Colors.white;
-  static const badge = Color(0xFFF59E0B);
-  static const success = Color(0xFF16A34A);
-}
-
-class DemoData {
-  static List<Map<String, dynamic>> students() {
-    return [
-      {
-        "id": 801,
-        "name": "Anika K P",
-        "class_id": 8,
-        "image": "",
-      },
-      {
-        "id": 802,
-        "name": "Vedhika Sai",
-        "class_id": 8,
-        "image": "",
-      },
-    ];
-  }
-
-  static List<Map<String, dynamic>> reportCards() {
-    return [
-      {
-        "id": -1,
-        "exam": "Mid Term",
-        "generated_on": "2026-03-28",
-        "pdf_file": "",
-        "is_demo": true,
-      },
-      {
-        "id": -2,
-        "exam": "Periodic Assessment 2",
-        "generated_on": "2026-01-15",
-        "pdf_file": "",
-        "is_demo": true,
-      },
-    ];
-  }
-
-  static List<Map<String, dynamic>> assignments() {
-    return [
-      {
-        "title": "Science - Water Cycle Model",
-        "due": "2026-04-29",
-        "status": "Pending",
-      },
-      {
-        "title": "Math - Algebra Worksheet",
-        "due": "2026-04-27",
-        "status": "Submitted",
-      },
-      {
-        "title": "English - Poem Recitation",
-        "due": "2026-05-02",
-        "status": "Pending",
-      },
-    ];
-  }
-
-  static List<Map<String, dynamic>> happenings() {
-    return [
-      {
-        "title": "PTA Meeting",
-        "date": "2026-04-30",
-        "description": "Discussion on student progress and term planning.",
-      },
-      {
-        "title": "Annual Sports Practice",
-        "date": "2026-05-04",
-        "description": "Track and field selections for classes 6-10.",
-      },
-      {
-        "title": "Art Exhibition",
-        "date": "2026-05-09",
-        "description": "Student artworks will be displayed in the main hall.",
-      },
-    ];
-  }
-
-  static List<Map<String, dynamic>> attendance() {
-    return [
-      {"date": "2026-04-24", "status": "PRESENT", "reason": ""},
-      {"date": "2026-04-23", "status": "PRESENT", "reason": ""},
-      {"date": "2026-04-22", "status": "ABSENT", "reason": "Fever"},
-      {"date": "2026-04-21", "status": "PRESENT", "reason": ""},
-    ];
-  }
-
-  static List<Map<String, dynamic>> marks() {
-    return [
-      {"subject": "English", "exam": "Periodic Assessment 1", "score": "88"},
-      {"subject": "Mathematics", "exam": "Periodic Assessment 1", "score": "92"},
-      {"subject": "Science", "exam": "Mid Term", "score": "85"},
-      {"subject": "Social", "exam": "End Term", "score": "90"},
-    ];
-  }
-
-  static List<Map<String, dynamic>> announcements() {
-    return [
-      {
-        "title": "School Reopens on Monday",
-        "body": "Students should report by 8:20 AM in complete uniform.",
-      },
-      {
-        "title": "Parent Portal Demo",
-        "body": "This app is currently showing demonstration content.",
-      },
-    ];
-  }
-
-  static List<Map<String, dynamic>> materials() {
-    return [
-      {"title": "Chapter 5 Notes", "subject": "Science", "file": "", "is_demo": true},
-      {"title": "Grammar Practice", "subject": "English", "file": "", "is_demo": true},
-      {"title": "Algebra Worksheet", "subject": "Mathematics", "file": "", "is_demo": true},
-    ];
-  }
-
-  static List<Map<String, dynamic>> feeInvoices() {
-    return [
-      {
-        "id": -101,
-        "title": "Tuition Fee - Apr 2026",
-        "due_date": "2026-04-28",
-        "total_amount": "3500.00",
-        "paid_amount": "1500.00",
-        "balance_amount": "2000.00",
-        "status": "PARTIAL",
-        "payments": [],
-        "is_demo": true,
-      },
-      {
-        "id": -102,
-        "title": "Transport Fee - Apr 2026",
-        "due_date": "2026-04-28",
-        "total_amount": "1200.00",
-        "paid_amount": "0.00",
-        "balance_amount": "1200.00",
-        "status": "PENDING",
-        "payments": [],
-        "is_demo": true,
-      },
-    ];
-  }
-
-  static List<Map<String, dynamic>> chats() {
-    return [
-      {
-        "room_id": -1,
-        "name": "Class 8-C Group",
-        "avatar_url": "",
-        "is_group": true,
-        "class_name": "8 C",
-        "member_names": ["Ms. Priya", "Mr. Arjun", "Dr Dipu K P"],
-        "last_message": "Tomorrow is project submission day.",
-      },
-      {
-        "room_id": -2,
-        "name": "Ms. Priya",
-        "avatar_url": "",
-        "is_group": false,
-        "class_name": "8 C",
-        "member_names": ["Ms. Priya"],
-        "last_message": "Anika improved in grammar this week.",
-      },
-      {
-        "room_id": -3,
-        "name": "Mr. Arjun",
-        "avatar_url": "",
-        "is_group": false,
-        "class_name": "8 C",
-        "member_names": ["Mr. Arjun"],
-        "last_message": "Please revise chapter 4 before Friday.",
-      },
-    ];
-  }
-
-  static List<Map<String, dynamic>> messages() {
-    return [
-      {
-        "id": -1,
-        "sender_id": 1,
-        "sender_name": "Ms. Priya",
-        "sender_avatar_url": "",
-        "content": "Good evening. Anika did very well in class today.",
-      },
-      {
-        "id": -2,
-        "sender_id": 999,
-        "sender_name": "You",
-        "sender_avatar_url": "",
-        "content": "Thank you for the update, ma'am.",
-      },
-      {
-        "id": -3,
-        "sender_id": 1,
-        "sender_name": "Ms. Priya",
-        "sender_avatar_url": "",
-        "content": "Please check the assignment list for this week.",
-      },
-    ];
-  }
-}
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -283,7 +54,7 @@ class ParentApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      scrollBehavior: NoStretchScrollBehavior(),
+      scrollBehavior: const NoStretchScrollBehavior(),
       routes: {
         '/snitch/dashboard': (ctx) => const SnitchDashboard(),
         '/snitch/assignments': (ctx) => const SnitchAssignments(),
@@ -291,11 +62,23 @@ class ParentApp extends StatelessWidget {
         '/snitch/login': (ctx) => const SnitchLogin(),
         '/snitch/login-web': (ctx) => const SnitchLogin(),
       },
-      home: enableSnitch ? const SnitchDashboard() : SplashScreen(),
+      home: const SnitchDashboard(),
     );
   }
 }
 
+class NoStretchScrollBehavior extends MaterialScrollBehavior {
+  const NoStretchScrollBehavior();
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
+  }
+}
 class NoStretchScrollBehavior extends MaterialScrollBehavior {
   const NoStretchScrollBehavior();
 
