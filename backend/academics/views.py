@@ -15,6 +15,7 @@ from .models import (
     Attendance,
     Marks,
     ParentStudentLink,
+    ClassTeacher,
     FeeInvoice,
     FeePayment,
     FeePlan,
@@ -36,14 +37,54 @@ def parent_students(request, parent_id):
     links = ParentStudentLink.objects.filter(parent_id=parent_id)
     students = [link.student for link in links]
 
-    data = [{
-        "id": s.id,
-        "name": s.full_name,
-        "class_id": s.class_section.id,
-        "class_name": str(s.class_section),
-        "image": s.photo.url if s.photo else None,
-    } for s in students]
+    data = [_student_payload(s, parent_id=parent_id) for s in students]
     return Response(data)
+
+
+def _student_payload(student, parent_id=None):
+    parent_link = None
+    if parent_id is not None:
+        parent_link = ParentStudentLink.objects.filter(parent_id=parent_id, student=student).select_related("parent").first()
+    else:
+        parent_link = ParentStudentLink.objects.filter(student=student).select_related("parent").first()
+
+    class_teacher = ClassTeacher.objects.filter(class_section=student.class_section).select_related("teacher").first()
+    parent_profile = parent_link.parent if parent_link else None
+    user_phone = parent_profile.user.phone if parent_profile and parent_profile.user.phone else ""
+    emergency_name = student.emergency_contact_name or (parent_profile.full_name if parent_profile else "")
+    emergency_phone = student.emergency_contact_phone or user_phone
+
+    return {
+        "id": student.id,
+        "name": student.full_name,
+        "class_id": student.class_section.id,
+        "class_name": str(student.class_section),
+        "roll_no": student.roll_no,
+        "admission_no": student.admission_no,
+        "date_of_birth": student.date_of_birth.isoformat() if student.date_of_birth else None,
+        "blood_group": student.blood_group,
+        "gender": student.gender,
+        "address": student.address,
+        "image": student.photo.url if student.photo else None,
+        "teacher_name": class_teacher.teacher.full_name if class_teacher else "",
+        "teacher_photo": class_teacher.teacher.photo.url if class_teacher and class_teacher.teacher.photo else None,
+        "parent_name": parent_profile.full_name if parent_profile else "",
+        "parent_username": parent_profile.user.username if parent_profile else "",
+        "parent_phone": parent_profile.user.phone if parent_profile and parent_profile.user.phone else "",
+        "relationship": parent_link.relationship if parent_link else "",
+        "emergency_contact_name": emergency_name,
+        "emergency_contact_phone": emergency_phone,
+        "emergency_contact": " • ".join([part for part in [emergency_name, emergency_phone] if part]),
+    }
+
+
+@api_view(["GET"])
+def student_profile(request, student_id):
+    student = Student.objects.select_related("class_section").filter(id=student_id).first()
+    if student is None:
+        return Response({"detail": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response(_student_payload(student))
 
 
 @api_view(["GET"])

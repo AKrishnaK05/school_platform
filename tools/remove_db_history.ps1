@@ -1,0 +1,7 @@
+Write-Host "This script prints recommended commands to remove backend/db.sqlite3 from git history. It will NOT run destructive operations automatically.`n"
+Write-Host "Recommended (git-filter-repo):"
+Write-Host "  pip install --user git-filter-repo"
+Write-Host "  git filter-repo --path backend/db.sqlite3 --invert-paths"
+Write-Host "Alternative (BFG):"
+Write-Host "  Download BFG jar and run: java -jar bfg.jar --delete-files db.sqlite3"
+Write-Host "After rewriting history: git reflog expire --expire=now --all ; git gc --prune=now --aggressive ; git push --force --all ; git push --force --tags"

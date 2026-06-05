@@ -13,6 +13,13 @@ class Student(models.Model):
     roll_no = models.CharField(max_length=20)
     class_section = models.ForeignKey(ClassSection, on_delete=models.CASCADE)
     photo = models.ImageField(upload_to="students/", blank=True, null=True)
+    admission_no = models.CharField(max_length=30, blank=True, default="")
+    date_of_birth = models.DateField(blank=True, null=True)
+    blood_group = models.CharField(max_length=5, blank=True, default="")
+    gender = models.CharField(max_length=20, blank=True, default="")
+    address = models.TextField(blank=True, default="")
+    emergency_contact_name = models.CharField(max_length=200, blank=True, default="")
+    emergency_contact_phone = models.CharField(max_length=20, blank=True, default="")
 
     def __str__(self):
         return self.full_name

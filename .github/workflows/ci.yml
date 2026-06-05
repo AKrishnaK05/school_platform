@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+      - name: Install dependencies
+        run: |
+          cd parent_app
+          flutter pub get
+      - name: Run flutter analyze
+        run: |
+          cd parent_app
+          flutter analyze
+      - name: Lint backend (optional)
+        run: |
+          echo "No backend lint configured. Add linters if desired."
