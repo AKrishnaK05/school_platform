@@ -1,4 +1,4 @@
-const puppeteer = require('C:\\nvm4w\\nodejs\\node_modules\\mcp\\node_modules\\puppeteer');
+const puppeteer = require('C:\nvm4w\nodejs\node_modules\mcp\node_modules\puppeteer');
 const fs = require('fs');
 (async()=>{
   const url='https://stitch.withgoogle.com/projects/18040412930613593715';

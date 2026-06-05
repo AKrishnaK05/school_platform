@@ -1,10 +1,10 @@
-const puppeteer = require('C:\\nvm4w\\nodejs\\node_modules\\mcp\\node_modules\\puppeteer');
+const puppeteer = require('C:\nvm4w\nodejs\node_modules\mcp\node_modules\puppeteer');
 const fs = require('fs');
 const path = require('path');
 
 (async () => {
   const url = 'https://stitch.withgoogle.com/projects/18040412930613593715';
-  const outDir = path.join(__dirname, 'parent_app', 'assets', 'snitch');
+  const outDir = path.join(__dirname, '..', '..', 'parent_app', 'assets', 'snitch');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
   const browser = await puppeteer.launch({ args: ['--no-sandbox','--disable-setuid-sandbox'] });
