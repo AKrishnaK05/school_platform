@@ -1,18 +1,34 @@
-# parent_app
+# Parent App (Snitch integration)
 
-A new Flutter project.
+This Flutter app is the mobile parent app for the school platform. It contains a "Snitch" prototype integrated as native screens.
 
-## Getting Started
+Features implemented
+- Native Snitch login with token persistence (`SharedPreferences`).
+- Dashboard: fees summary, marks summary, assignments carousel, notifications.
+- Assignments: list with details and pull-to-refresh.
+- Marks: grouped by exam taxonomy (Periodic Assessment 1, Periodic Assessment 2, Mid Term, End Term).
+- Lightweight API client: `lib/services/snitch_api.dart` with safe demo fallbacks.
+- Logout/clear token flow.
 
-This project is a starting point for a Flutter application.
+Run the app
+```bash
+cd parent_app
+flutter pub get
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+Run analyzer
+```bash
+cd parent_app
+flutter analyze
+```
 
+Run widget tests
+```bash
+cd parent_app
+flutter test
+```
 
-For help getting started with Flutter development, view the
-
-## Snitch prototype
-
-Local prototype files from Stitch have been copied into `lib/snitch` and `assets/snitch`.
-See `snitch_merge_instructions.md` for integration steps and recommended next actions.
-samples, guidance on mobile development, and a full API reference.
+Notes
+- The API client provides demo fallback data if backend endpoints are unreachable.
+- Update `lib/services/snitch_api.dart` to match your backend endpoints and auth format as needed.

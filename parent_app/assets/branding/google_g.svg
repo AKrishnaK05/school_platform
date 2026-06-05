@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" width="48" height="48">
+  <!-- Approximate Google G mark built from colored arcs -->
+  <g fill="none" stroke-linecap="round" stroke-width="6">
+    <path d="M34 12a14 14 0 1 0 1 24" stroke="#4285F4"/><!-- blue -->
+    <path d="M34 12a20 20 0 0 1 0 8" stroke="#EA4335" transform="translate(0,0)"/><!-- red small -->
+    <path d="M34 36a14 14 0 0 1-20 0" stroke="#34A853"/><!-- green -->
+    <path d="M14 24a10 10 0 0 1 6-8" stroke="#FBBC05"/><!-- yellow -->
+  </g>
+</svg>
