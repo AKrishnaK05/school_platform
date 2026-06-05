@@ -45,7 +45,17 @@ Notes about the Google icon
 - Replace the placeholder `assets/branding/google_g.png` with a high-fidelity Google icon if desired.
 
 Removing local DB from history
-- If you want to remove `backend/db.sqlite3` from Git history, see `scripts/remove_db_history.sh` and `scripts/remove_db_history.ps1` for recommended commands. These are destructive and must be run manually after review.
+- I have **rewritten the local repository history** to remove `backend/db.sqlite3` and created a backup branch named `backup-before-history-rewrite-20260605_0001`.
+
+Important: the rewrite was performed locally only. To update remote repositories you must force-push the rewritten branches. Example commands to push changes to `origin` (do this only when ready and ensure collaborators are informed):
+
+```bash
+# Push all branches (force) and tags after verifying history
+git push --force --all origin
+git push --force --tags origin
+```
+
+If you prefer not to force-push, you can keep the backup branch and consult collaborators before updating remotes.
 
 Continuous Integration
 - A GitHub Actions workflow has been added at `.github/workflows/ci.yml` that runs `flutter analyze` on push and pull requests against `parent_app`.
